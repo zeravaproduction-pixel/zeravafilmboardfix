@@ -2281,16 +2281,17 @@
       `).join('') || '<div class="text-xs text-slate-400">Belum ada undangan baru yang dikirim.</div>';
     }
 
-    async function handleAdminSendInvite(e) {
+        async function handleAdminSendInvite(e) {
       e.preventDefault();
       const email = document.getElementById('admInviteEmail').value.trim();
       const name = document.getElementById('admInviteName').value.trim();
       const divisi = document.getElementById('admInviteDivisi').value.trim();
       const role = document.getElementById('admInviteRole').value.trim();
 
-      const baseUrl = window.location.origin + window.location.pathname;
+      const baseUrl = 'https://filmboard.zerava.web.id';
       const inviteLink = `${baseUrl}?mode=set-password&email=${encodeURIComponent(email)}`;
 
+      // 1. Simpan dulu ke database Supabase
       if (!db.users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
         const newU = {
           id: 'u_' + Date.now(),
@@ -2317,19 +2318,31 @@
       saveDbLocal();
       if (sb) await sb.from('zerava_invites').insert([{ email, name, divisi, role }]);
 
-      // Panggil fungsi pengirim email Resend jika sudah online di Vercel/Cloudflare
+      // 2. Kirim email sungguhan lewat Resend (Vercel API)
+      showLoading('Mengirim email via Resend...');
       try {
-        await fetch('/api/send-invite', {
+        const res = await fetch('/api/send-invite', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, name, divisi, inviteLink })
         });
-      } catch (err) {}
+        const result = await res.json();
+        hideLoading();
+
+        if (res.ok) {
+          showCenterPopup('Email Berhasil Terkirim!', `Link pembuatan password telah sukses dikirim ke Gmail: <b>${email}</b>.`);
+        } else {
+          showCenterPopup('Gagal Mengirim Email', `Resend menolak pengiriman: ${result.error || 'Periksa API Key di Vercel.'}`, 'fa-triangle-exclamation');
+        }
+      } catch (err) {
+        hideLoading();
+        showCenterPopup('Error Koneksi API', `Gagal menghubungi server pengirim email: ${err.message}`, 'fa-triangle-exclamation');
+      }
 
       e.target.reset();
       renderAdminPage();
-      showCenterPopup('Undangan Terkirim!', `Calon member <b>${name} (${email})</b> telah terdaftar di Supabase dan email link pembuatan password telah dikirim.`);
     }
+
 
     let targetSetPassEmail = '';
     function openSetPasswordFlow(email) {
