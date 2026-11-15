@@ -37,14 +37,12 @@ export default async function handler(req, res) {
       vapidKeys.privateKey
     );
 
-    // 1. Jika browser meminta Public Key untuk mendaftarkan HP
     if (req.method === 'GET') {
       return res.status(200).json({ publicKey: vapidKeys.publicKey });
     }
 
-    // 2. Jika ada pengiriman Push Notification ke HP member yang sedang menutup aplikasi
     if (req.method === 'POST') {
-      const { title, body, page, senderId } = req.body;
+      const { title, body, page, senderId, targetUserIds } = req.body;
 
       const { data: subs } = await sb
         .from('zerava_nicknames')
@@ -58,28 +56,34 @@ export default async function handler(req, res) {
       const payload = JSON.stringify({
         title: title || 'Zerava Filmboard',
         body: body || 'Ada pembaruan baru di Zerava Filmboard',
-        page: page || 'notifications'
+        page: page || 'all|notifications'
       });
 
-      const tasks = subs
-        .filter((row) => senderId === 'TEST' || row.owner_id !== senderId)
-        .map(async (row) => {
-          try {
-            const subObj = JSON.parse(row.nickname);
-            await webpush.sendNotification(subObj, payload);
-          } catch (err) {
-            // Hapus langganan jika sudah kedaluwarsa/dihapus dari HP
-            if (err.statusCode === 404 || err.statusCode === 410) {
-              await sb
-                .from('zerava_nicknames')
-                .delete()
-                .match({ owner_id: row.owner_id, target_id: '__push_sub__' });
-            }
+      // Filter ketat: Jika ada targetUserIds (seperti pada DM atau Grup tertutup), hanya kirim ke mereka!
+      const filteredSubs = subs.filter((row) => {
+        if (senderId !== 'TEST' && row.owner_id === senderId) return false;
+        if (Array.isArray(targetUserIds) && targetUserIds.length > 0) {
+          return targetUserIds.includes(row.owner_id);
+        }
+        return true;
+      });
+
+      const tasks = filteredSubs.map(async (row) => {
+        try {
+          const subObj = JSON.parse(row.nickname);
+          await webpush.sendNotification(subObj, payload);
+        } catch (err) {
+          if (err.statusCode === 404 || err.statusCode === 410) {
+            await sb
+              .from('zerava_nicknames')
+              .delete()
+              .match({ owner_id: row.owner_id, target_id: '__push_sub__' });
           }
-        });
+        }
+      });
 
       await Promise.allSettled(tasks);
-      return res.status(200).json({ success: true });
+      return res.status(200).json({ success: true, sent: filteredSubs.length });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });
