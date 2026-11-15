@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Zerava Filmboard — Zerava Studio</title>
   <link rel="manifest" href="/manifest.json" />
+    <!-- Dukungan Aplikasi Penuh untuk iPhone (iOS) & Android -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#11110F" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Zerava" />
+  <link rel="apple-touch-icon" href="/icon-512.png" />
   <meta name="theme-color" content="#11110F" />
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -2903,5 +2911,124 @@
       document.getElementById('loginIdentifier').value = targetSetPassEmail;
     }
   </script>
+    <!-- =================================================================
+       TOMBOL & MODAL INSTALL APLIKASI UNIVERSAL (ANDROID & iOS)
+       ================================================================= -->
+  <!-- Floating Banner Install Aplikasi (Muncul Otomatis Jika Belum Di-install) -->
+  <div id="pwaInstallBanner" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-[90] hidden w-[92%] max-w-md">
+    <div class="bg-zteal dark:bg-zcard border-2 border-white/20 dark:border-zbeige/50 rounded-2xl p-3.5 shadow-2xl flex items-center justify-between gap-3 text-white">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-10 h-10 rounded-xl bg-white/15 dark:bg-zbeige/20 flex items-center justify-center text-lg shrink-0 text-white dark:text-zbeige">
+          <i class="fa-solid fa-mobile-screen-button"></i>
+        </div>
+        <div class="truncate">
+          <div class="text-xs font-extrabold truncate">Install Aplikasi Zerava</div>
+          <div class="text-[10px] opacity-85 truncate">Tersedia untuk Android & iPhone (iOS)</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button onclick="triggerUniversalAppInstall()" class="btn-interactive px-3.5 py-2 rounded-xl bg-white dark:bg-zbeige text-zteal dark:text-zdark font-extrabold text-xs shadow">
+          Install
+        </button>
+        <button onclick="dismissInstallBanner()" class="w-7 h-7 rounded-lg hover:bg-white/10 flex items-center justify-center text-xs opacity-75">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Panduan Install Khusus Pengguna iPhone (iOS) -->
+  <div id="iosInstallModal" class="fixed inset-0 z-[160] hidden items-center justify-center bg-black/80 backdrop-blur-sm p-5">
+    <div class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl max-w-sm w-full p-6 space-y-4 text-center shadow-2xl animate-page">
+      <div class="w-14 h-14 rounded-2xl mx-auto bg-zteal/15 dark:bg-zbeige/20 text-zteal dark:text-zbeige flex items-center justify-center text-2xl">
+        <i class="fa-brands fa-apple"></i>
+      </div>
+      <div class="space-y-1">
+        <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Install Zerava di iPhone / iOS</h3>
+        <p class="text-xs text-slate-500 dark:text-gray-300">Ikuti 2 langkah mudah ini di browser Safari untuk memasang aplikasi di layar utama iPhone kamu:</p>
+      </div>
+      <div class="bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder rounded-2xl p-4 text-left space-y-3 text-xs">
+        <div class="flex items-center gap-3">
+          <span class="w-6 h-6 rounded-full bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold flex items-center justify-center shrink-0">1</span>
+          <span class="text-slate-700 dark:text-gray-200">Ketuk ikon <b>Share / Bagikan</b> <i class="fa-solid fa-arrow-up-from-bracket text-zteal dark:text-zbeige mx-1"></i> di bilah bawah browser Safari.</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="w-6 h-6 rounded-full bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold flex items-center justify-center shrink-0">2</span>
+          <span class="text-slate-700 dark:text-gray-200">Geser ke bawah lalu pilih <b>"Tambah ke Layar Utama" (Add to Home Screen)</b> <i class="fa-regular fa-square-plus text-zteal dark:text-zbeige mx-1"></i>, lalu ketuk <b>Tambah</b>.</span>
+        </div>
+      </div>
+      <button onclick="closeIosInstallModal()" class="btn-interactive w-full py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
+        Mengerti
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let deferredAndroidInstallPrompt = null;
+
+    // Cek apakah sudah dibuka di dalam Aplikasi yang ter-install (Standalone Mode)
+    function isRunningStandaloneApp() {
+      return (window.matchMedia('(display-mode: standalone)').matches) || (window.navigator.standalone === true);
+    }
+
+    // Deteksi apakah pengguna memakai iPhone / iPad (iOS)
+    function isIosDevice() {
+      return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+    }
+
+    // Tangkap event install otomatis untuk Android / Chrome
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredAndroidInstallPrompt = e;
+      if (!isRunningStandaloneApp()) {
+        document.getElementById('pwaInstallBanner').classList.remove('hidden');
+      }
+    });
+
+    // Munculkan banner juga untuk pengguna iPhone jika belum di-install
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!isRunningStandaloneApp() && isIosDevice()) {
+        document.getElementById('pwaInstallBanner').classList.remove('hidden');
+      }
+    });
+
+    async function triggerUniversalAppInstall() {
+      // 1. Jika di Android & mendukung 1-Click Install
+      if (deferredAndroidInstallPrompt) {
+        deferredAndroidInstallPrompt.prompt();
+        const { outcome } = await deferredAndroidInstallPrompt.userChoice;
+        if (outcome === 'accepted') {
+          document.getElementById('pwaInstallBanner').classList.add('hidden');
+          showTopPopup('Meng-install Aplikasi...', 'Aplikasi Zerava Filmboard sedang ditambahkan ke layar utama HP-mu!');
+        }
+        deferredAndroidInstallPrompt = null;
+        return;
+      }
+
+      // 2. Jika di iPhone / iOS, tampilkan panduan visual Safari
+      if (isIosDevice()) {
+        document.getElementById('iosInstallModal').classList.remove('hidden');
+        document.getElementById('iosInstallModal').classList.add('flex');
+        return;
+      }
+
+      // 3. Fallback untuk browser Android lain
+      showTopPopup(
+        'Cara Install Cepat',
+        'Ketuk ikon <b>Titik Tiga (⋮)</b> di pojok kanan atas browser, lalu pilih <b>"Install Aplikasi" / "Tambahkan ke Layar Utama"</b>.',
+        'fa-mobile-screen-button'
+      );
+    }
+
+    function dismissInstallBanner() {
+      document.getElementById('pwaInstallBanner').classList.add('hidden');
+    }
+
+    function closeIosInstallModal() {
+      document.getElementById('iosInstallModal').classList.add('hidden');
+      document.getElementById('iosInstallModal').classList.remove('flex');
+    }
+  </script>
+
 </body>
 </html>
