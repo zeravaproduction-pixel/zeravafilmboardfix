@@ -33,7 +33,8 @@
           },
           colors: {
             zdark: '#11110F',
-            zcard: '#1A1A17',
+            zcard: '#1A1A17'
+              
             zborder: '#2C2B27',
             zbeige: '#D8BBA8',
             zpurple: '#9276A8',
@@ -1187,7 +1188,7 @@
       }
     }
 
-    async function createAndBroadcastNotification(type, title, body, page = 'home') {
+        async function createAndBroadcastNotification(type, title, body, page = 'home') {
       const newNotif = {
         id: 'n_' + Date.now() + '_' + Math.floor(Math.random() * 100),
         type,
@@ -1207,7 +1208,22 @@
           }]);
         } catch (e) {}
       }
+
+      // Kirim sinyal Background Web Push ke semua HP member yang sedang menutup aplikasi
+      try {
+        fetch('/api/send-push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title,
+            body,
+            page,
+            senderId: currentUser ? currentUser.id : ''
+          })
+        });
+      } catch (e) {}
     }
+
 
     // SINKRONISASI PARALEL CEPAT (TIDAK MEMBEKUKAN LAYAR SAAT GANTI HALAMAN)
     let knownMsgIds = new Set();
@@ -1236,13 +1252,15 @@
           }));
         }
 
-        if (nRes.data) {
+                if (nRes.data) {
           db.nicknames = {};
           nRes.data.forEach(r => {
+            if (r.owner_id === '__system__' || r.target_id === '__push_sub__') return;
             if (!db.nicknames[r.owner_id]) db.nicknames[r.owner_id] = {};
             db.nicknames[r.owner_id][r.target_id] = r.nickname;
           });
         }
+
 
         if (gRes.data && gRes.data.length > 0) db.groups = gRes.data;
 
@@ -2613,55 +2631,73 @@
       showTopPopup('Materi Berhasil Di-upload', `Materi <b>${newMat.title}</b> sudah tampil di Zerava Class & Notifikasi.`);
     }
 
-    // 5. NOTIFIKASI LUAR WEB (PWA SERVICE WORKER)
+    // 5. NOTIFIKASI LUAR WEB (BACKGROUND WEB PUSH & NADA DERING ASLI HP)
     let swRegistration = null;
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const rawData = window.atob(base64);
+      return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
+    }
 
     async function registerPwaServiceWorker() {
       if (!('serviceWorker' in navigator)) return;
       try {
         swRegistration = await navigator.serviceWorker.register('/sw.js');
+        if (currentUser && Notification.permission === 'granted') {
+          subscribeDeviceToBackgroundPush();
+        }
       } catch (err) {}
     }
 
-    function playNotificationSound() {
+    async function subscribeDeviceToBackgroundPush() {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window) || !currentUser || !sb) return;
       try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(520, ctx.currentTime + 0.25);
-        gain.gain.setValueAtTime(0.25, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.25);
+        const reg = swRegistration || (await navigator.serviceWorker.ready);
+        const res = await fetch('/api/send-push');
+        if (!res.ok) return;
+        const { publicKey } = await res.json();
+
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(publicKey)
+          });
+        }
+
+        await sb.from('zerava_nicknames').upsert([
+          {
+            owner_id: currentUser.id,
+            target_id: '__push_sub__',
+            nickname: JSON.stringify(sub)
+          }
+        ]);
       } catch (e) {}
     }
 
+    // Tanpa suara sintetis kode — Murni memicu notifikasi & nada dering bawaan HP masing-masing
     async function fireSystemNotification(title, body, targetPage = 'notifications') {
-      playNotificationSound();
-      if (!('Notification' in window)) return;
-      if (Notification.permission === 'granted') {
-        const options = {
-          body,
-          icon: '/icon-512.png',
-          badge: '/icon-512.png',
-          vibrate: [200, 100, 200],
-          tag: 'zerava-notif-' + Date.now(),
-          renotify: true,
-          data: { page: targetPage }
-        };
-        try {
-          const reg = swRegistration || (await navigator.serviceWorker.getRegistration());
-          if (reg && reg.showNotification) {
-            await reg.showNotification(title, options);
-            return;
-          }
-        } catch (e) {}
-        try { new Notification(title, options); } catch (e) {}
-      }
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      const options = {
+        body,
+        icon: '/icon-512.png',
+        badge: '/icon-512.png',
+        silent: false,
+        vibrate: [200, 100, 200],
+        tag: 'zerava-notif-' + Date.now(),
+        renotify: true,
+        data: { page: targetPage }
+      };
+      try {
+        const reg = swRegistration || (await navigator.serviceWorker.getRegistration());
+        if (reg && reg.showNotification) {
+          await reg.showNotification(title, options);
+          return;
+        }
+      } catch (e) {}
+      try { new Notification(title, options); } catch (e) {}
     }
 
     async function setupAndTestPushNotification() {
@@ -2678,18 +2714,32 @@
       renderNotificationsPage();
 
       if (perm === 'granted') {
+        await subscribeDeviceToBackgroundPush();
         showTopPopup(
-          'Tes Notif Luar Web Dimulai!',
-          'Sekarang <b>keluar ke layar utama HP atau pindah tab selama 3 detik</b>—notifikasi akan muncul di bar atas HP-mu!',
+          'Tes Notif Latar Belakang Dimulai!',
+          'Sekarang <b>tutup/keluar dari aplikasi selama 4 detik</b>—notif dengan nada dering asli HP-mu akan berbunyi!',
           'fa-bell'
         );
         setTimeout(async () => {
-          await createAndBroadcastNotification('chat', 'Zerava Filmboard • Pesan Masuk', `${currentUser.name}, notifikasi latar belakangmu sudah aktif seperti WhatsApp!`, 'notifications');
-          await fireSystemNotification('Zerava Filmboard • Pesan Masuk', `${currentUser.name}, notifikasi latar belakangmu sudah aktif seperti WhatsApp!`, 'notifications');
-          if (!document.getElementById('page-notifications').classList.contains('hidden')) {
-            renderNotificationsPage();
+          try {
+            await fetch('/api/send-push', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                title: 'Zerava Filmboard • Pesan Masuk',
+                body: `Halo ${currentUser.name}, notifikasi latar belakang & nada dering HP aslimu sudah aktif!`,
+                page: 'notifications',
+                senderId: 'TEST'
+              })
+            });
+          } catch (e) {
+            await fireSystemNotification(
+              'Zerava Filmboard • Pesan Masuk',
+              `Halo ${currentUser.name}, notifikasi dengan nada dering HP aslimu sudah aktif!`,
+              'notifications'
+            );
           }
-        }, 3000);
+        }, 4000);
       } else {
         showTopPopup('Izin Diblokir Browser', 'Ketuk ikon gembok di kiri alamat web atas, lalu ubah Notifications menjadi Allow/Izinkan.', 'fa-lock');
       }
