@@ -344,7 +344,7 @@
     <!-- MAIN DYNAMIC PAGE CONTAINER -->
     <main id="mainContentArea" class="flex-1 max-w-4xl w-full mx-auto p-4 md:p-6">
 
-      <!-- 1. HOME PAGE -->
+      <!-- 1. HOME PAGE (DENGAN HIGHLIGHT 3 IDE TERPOPULER - OPSI B) -->
       <section id="page-home" class="app-page space-y-6">
         <div class="zerava-hero-banner rounded-3xl border border-slate-200 p-6 md:p-8 shadow-xl">
           <span class="inline-block px-3 py-1 rounded-full bg-white/15 text-xs font-semibold mb-3 text-white">
@@ -354,10 +354,32 @@
             Selamat Datang, <span id="homeUserName" style="color:#D8BBA8;">Member</span>!
           </h1>
           <p class="text-xs md:text-sm text-gray-200 mt-2 leading-relaxed">
-            Pantau materi perfilman terbaru, kolaborasi naskah & shoot list di Production Film, serta diskusi tim Zerava Studio secara real-time.
+            Pantau materi perfilman terbaru, lempar & voting ide cerita di Bank Ide, serta kolaborasi produksi tim Zerava Studio secara real-time.
           </p>
         </div>
 
+        <!-- HIGHLIGHT 3 IDE TERPOPULER MINGGU INI (OPSI B) -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <div class="inline-flex items-center gap-1.5 text-xs font-extrabold text-amber-500">
+                <i class="fa-solid fa-fire"></i> <span>Bank Ide & Voting Cerita</span>
+              </div>
+              <h2 class="text-base font-extrabold text-slate-900 dark:text-white">3 Ide Film Terpopuler</h2>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="navigateTo('create-idea')" class="btn-interactive px-3 py-1.5 rounded-xl bg-slate-200/80 dark:bg-zcard border border-slate-300 dark:border-zborder text-[11px] font-extrabold text-slate-800 dark:text-zbeige">
+                <i class="fa-solid fa-plus mr-1"></i>Lempar Ide
+              </button>
+              <button onclick="openProductionWithTab('ideas')" class="text-xs font-bold text-zteal dark:text-zbeige hover:underline">
+                Semua Ide <i class="fa-solid fa-arrow-right ml-1"></i>
+              </button>
+            </div>
+          </div>
+          <div id="homeTopIdeasGrid" class="grid grid-cols-1 md:grid-cols-3 gap-3.5"></div>
+        </div>
+
+        <!-- WHAT'S NEW (ZERAVA CLASS) -->
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <div>
@@ -487,28 +509,117 @@
         <div id="memberProfilePageContent" class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl p-6 space-y-6"></div>
       </section>
 
-      <!-- 3. PRODUCTION FILM PAGE -->
+      <!-- ===============================================================
+           3. PRODUCTION FILM & BANK IDE PAGE (2 TAB UTAMA - OPSI B)
+           =============================================================== -->
       <section id="page-production" class="app-page hidden space-y-5">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Production Film</h2>
-            <p class="text-xs text-slate-500 dark:text-gray-400">Kelola project film Zerava Studio dari ide hingga dokumen syuting</p>
-          </div>
-          <button onclick="navigateTo('create-project')" class="zerava-btn-primary btn-interactive px-4 py-2.5 rounded-2xl font-extrabold text-xs self-start">
-            <i class="fa-solid fa-plus mr-1"></i> Tambah Project
+        <!-- Switcher 2 Tab Utama: Project Film vs Bank Ide & Voting -->
+        <div class="grid grid-cols-2 gap-2 bg-white dark:bg-zcard p-1.5 rounded-2xl border border-slate-200 dark:border-zborder text-xs shadow-sm">
+          <button onclick="switchProductionMainTab('projects')" id="prodTabBtn-projects" class="btn-interactive py-2.5 rounded-xl font-extrabold zerava-btn-primary flex items-center justify-center gap-2">
+            <i class="fa-solid fa-clapperboard"></i> <span>Project Film</span>
+          </button>
+          <button onclick="switchProductionMainTab('ideas')" id="prodTabBtn-ideas" class="btn-interactive py-2.5 rounded-xl font-extrabold text-slate-500 dark:text-gray-400 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-lightbulb"></i> <span>Bank Ide & Voting</span>
           </button>
         </div>
 
-        <div class="relative">
-          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
-          <input id="projSearchInput" oninput="renderProductionList(true)" type="text" placeholder="Temukan Project Film..."
-            class="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-white dark:bg-zcard border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white focus:outline-none" />
+        <!-- SUB-VIEW A: DAFTAR PROJECT FILM -->
+        <div id="prodSubView-projects" class="space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Daftar Project Film</h2>
+              <p class="text-xs text-slate-500 dark:text-gray-400">Kelola project film Zerava Studio dari ide terpilih hingga dokumen syuting</p>
+            </div>
+            <button onclick="openCreateProjectWithIdea('')" class="zerava-btn-primary btn-interactive px-4 py-2.5 rounded-2xl font-extrabold text-xs self-start">
+              <i class="fa-solid fa-plus mr-1"></i> Tambah Project
+            </button>
+          </div>
+
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+            <input id="projSearchInput" oninput="renderProductionList(true)" type="text" placeholder="Temukan Project Film..."
+              class="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-white dark:bg-zcard border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white focus:outline-none" />
+          </div>
+
+          <div id="productionProjectsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </div>
 
-        <div id="productionProjectsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        <!-- SUB-VIEW B: BANK IDE & VOTING CERITA TERBUKA -->
+        <div id="prodSubView-ideas" class="hidden space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Bank Ide & Voting Cerita</h2>
+              <p class="text-xs text-slate-500 dark:text-gray-400">Semua member bebas melempar ide cerita kapan saja & voting untuk diangkat jadi Project Film!</p>
+            </div>
+            <button onclick="navigateTo('create-idea')" class="zerava-btn-primary btn-interactive px-4 py-2.5 rounded-2xl font-extrabold text-xs self-start">
+              <i class="fa-solid fa-plus mr-1"></i> Lempar Ide Baru
+            </button>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-2.5">
+            <div class="relative flex-1">
+              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+              <input id="ideaBankSearchIn" oninput="renderIdeaBankList(true)" type="text" placeholder="Cari judul ide, genre, atau nama pengusul..."
+                class="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-white dark:bg-zcard border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white focus:outline-none" />
+            </div>
+            <div class="flex gap-1.5 bg-white dark:bg-zcard p-1 rounded-2xl border border-slate-200 dark:border-zborder text-xs shrink-0">
+              <button onclick="setIdeaBankSort('votes')" id="ideaSortBtn-votes" class="px-3.5 py-1.5 rounded-xl font-bold zerava-btn-primary">
+                <i class="fa-solid fa-fire mr-1"></i>Vote Terbanyak
+              </button>
+              <button onclick="setIdeaBankSort('newest')" id="ideaSortBtn-newest" class="px-3.5 py-1.5 rounded-xl font-bold text-slate-500 dark:text-gray-400">
+                <i class="fa-regular fa-clock mr-1"></i>Terbaru
+              </button>
+            </div>
+          </div>
+
+          <div id="ideaBankListContainer" class="space-y-3"></div>
+        </div>
       </section>
 
-      <!-- 3B. HALAMAN TAMBAH PROJECT BARU -->
+      <!-- 3A-NEW. HALAMAN LEMPAR IDE CERITA BARU (KE BANK IDE UMUM) -->
+      <section id="page-create-idea" class="app-page hidden space-y-5">
+        <button onclick="goBack()" class="inline-flex items-center gap-2 text-xs font-bold text-zteal dark:text-zbeige">
+          <i class="fa-solid fa-arrow-left"></i> Kembali
+        </button>
+        <div class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl p-6 space-y-5">
+          <div>
+            <span class="px-3 py-0.5 rounded-full bg-amber-500/20 text-amber-500 text-[11px] font-bold">Bank Ide Zerava</span>
+            <h2 class="text-xl font-extrabold text-slate-900 dark:text-white mt-1">Lempar Ide Cerita Film Baru</h2>
+            <p class="text-xs text-slate-500 dark:text-gray-400">Tuliskan konsep ceritamu agar seluruh kru bisa membaca, memberikan vote, dan mengangkatnya menjadi project produksi.</p>
+          </div>
+          <form onsubmit="handleSaveGlobalIdea(event)" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-bold mb-1">Judul Ide / Konsep Cerita *</label>
+                <input id="globalIdeaTitleIn" type="text" required placeholder="Contoh: Bangkit dari Bully Lewat Tari"
+                  class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold mb-1">Genre Film *</label>
+                <select id="globalIdeaGenreIn" class="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white font-bold">
+                  <option value="Drama">🎭 Drama</option>
+                  <option value="Horor / Misteri">👻 Horor / Misteri</option>
+                  <option value="Komedi">😂 Komedi</option>
+                  <option value="Thriller / Action">⚡ Thriller / Action</option>
+                  <option value="Romansa">❤️ Romansa</option>
+                  <option value="Dokumenter">📽️ Dokumenter</option>
+                  <option value="Fantasi / Sci-Fi">✨ Fantasi / Sci-Fi</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">Premis / Garis Besar Cerita *</label>
+              <textarea id="globalIdeaContentIn" rows="5" required placeholder="Ceritakan premis, konflik utama, atau pesan menarik dari ide film ini..."
+                class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white"></textarea>
+            </div>
+            <button type="submit" class="zerava-btn-primary btn-interactive w-full py-3 rounded-2xl font-extrabold text-xs">
+              <i class="fa-solid fa-paper-plane mr-1.5"></i> Publikasikan ke Bank Ide & Mulai Voting
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- 3B. HALAMAN TAMBAH PROJECT BARU (DENGAN DROPDOWN PILIH IDE DARI BANK IDE) -->
       <section id="page-create-project" class="app-page hidden space-y-5">
         <button onclick="goBack()" class="inline-flex items-center gap-2 text-xs font-bold text-zteal dark:text-zbeige">
           <i class="fa-solid fa-arrow-left"></i> Kembali ke Production Film
@@ -516,16 +627,28 @@
         <div class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl p-6 space-y-5">
           <div>
             <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Tambah Project Film Baru</h2>
-            <p class="text-xs text-slate-500 dark:text-gray-400">Gunakan kalender tanggal resmi untuk mengatur jadwal produksi & tenggat pengumpulan</p>
+            <p class="text-xs text-slate-500 dark:text-gray-400">Kamu bisa memasukkan ide hasil voting dari Bank Ide atau membuat project baru secara langsung</p>
           </div>
           <form onsubmit="handleSaveNewProject(event)" class="space-y-4">
+            <!-- Dropdown Pilih Ide Hasil Voting dari Bank Ide -->
+            <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+              <label class="block text-xs font-extrabold text-amber-600 dark:text-amber-300">
+                <i class="fa-solid fa-lightbulb mr-1.5"></i> Ambil dari Bank Ide Hasil Voting (Opsional)
+              </label>
+              <select id="projSelectBankIdeaIn" onchange="handleSelectBankIdeaForProject(this.value)"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zdark border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white font-semibold">
+                <option value="">-- Buat Project Tanpa Mengambil dari Bank Ide --</option>
+              </select>
+              <p class="text-[11px] text-slate-500 dark:text-gray-400">Memilih ide di atas akan menautkan ide tersebut ke project ini dan mengisi judul/deskripsi secara otomatis.</p>
+            </div>
+
             <div>
               <label class="block text-xs font-bold mb-1">Judul Project Film *</label>
               <input id="projTitleIn" type="text" required placeholder="Contoh: Project FLSN: Berderap"
                 class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white" />
             </div>
             <div>
-              <label class="block text-xs font-bold mb-1">Deskripsi Singkat *</label>
+              <label class="block text-xs font-bold mb-1">Deskripsi / Sinopsis Singkat *</label>
               <textarea id="projDescIn" rows="3" required placeholder="Sinopsis singkat atau tujuan produksi..."
                 class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white"></textarea>
             </div>
@@ -567,7 +690,7 @@
         <div id="projectDetailTopCard" class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl p-5 space-y-4"></div>
 
         <div class="flex gap-2 overflow-x-auto pb-1">
-          <button onclick="selectProjSubFeature('ide')" id="subFeat-ide" class="btn-interactive px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap">1. Ide</button>
+          <button onclick="selectProjSubFeature('ide')" id="subFeat-ide" class="btn-interactive px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap">1. Ide Terpilih</button>
           <button onclick="selectProjSubFeature('naskah')" id="subFeat-naskah" class="btn-interactive px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap">2. Naskah</button>
           <button onclick="selectProjSubFeature('shootlist')" id="subFeat-shootlist" class="btn-interactive px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap">3. Shoot List</button>
           <button onclick="selectProjSubFeature('storyboard')" id="subFeat-storyboard" class="btn-interactive px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap">4. Story Board</button>
@@ -577,7 +700,7 @@
         <div id="projectSubFeatureBody" class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl p-5"></div>
       </section>
 
-      <!-- 3D. HALAMAN TAMBAH IDE / UPLOAD FILE PROJECT -->
+      <!-- 3D. HALAMAN UPLOAD FILE PROJECT -->
       <section id="page-project-add-item" class="app-page hidden space-y-5">
         <button onclick="goBack()" class="inline-flex items-center gap-2 text-xs font-bold text-zteal dark:text-zbeige">
           <i class="fa-solid fa-arrow-left"></i> Kembali ke Detail Project
@@ -723,7 +846,7 @@
         </div>
 
         <div class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl p-6 space-y-3">
-          <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Daftar File & Materi yang Kamu Bagikan</h3>
+          <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Daftar Ide, File & Materi yang Kamu Bagikan</h3>
           <div id="mySharedItemsBox" class="space-y-2"></div>
         </div>
 
@@ -870,7 +993,7 @@
   </div>
 
   <!-- =================================================================
-       JAVASCRIPT ENGINE (INSTANT REALTIME, PRIVATE DM NOTIF, AUTO-SCROLL)
+       JAVASCRIPT ENGINE (OPSI B: GLOBAL BANK IDE + HIGHLIGHT HOME)
        ================================================================= -->
   <script>
     const SUPABASE_URL = 'https://kfnevcwlbnsoavlqtacd.supabase.co';
@@ -878,6 +1001,7 @@
     const CLOUDINARY_CLOUD_NAME = 'nq7c5vor';
     const CLOUDINARY_PRESET = 'zerava_upload';
     const MAX_UPLOAD_BYTES = 15 * 1024 * 1024; // 15 MB
+    const BANK_IDE_ROW_ID = '__bank_ide__';
 
     const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
@@ -1099,6 +1223,27 @@
       avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(item[0])}&background=2B6E7E&color=fff&bold=true`
     }));
 
+    const defaultIdeaBank = [
+      {
+        id: 'id_1',
+        title: 'Bangkit dari Bully Lewat Tari',
+        genre: 'Drama',
+        content: 'Film ini bercerita tentang seorang laki-laki penari tradisional yang diremehkan teman-temannya, namun membuktikan kualitasnya di panggung utama sekolah.',
+        authorId: 'u_4',
+        likes: ['u_1', 'u_4', 'u_12', 'u_22'],
+        createdAt: 1763160000000
+      },
+      {
+        id: 'id_2',
+        title: 'Lensa Terakhir di Ruang Edit',
+        genre: 'Horor / Misteri',
+        content: 'Seorang editor film sekolah menemukan rekaman behind-the-scene misterius di kartu memori kamera lama milik angkatan pendahulu.',
+        authorId: 'u_12',
+        likes: ['u_1', 'u_12', 'u_27'],
+        createdAt: 1763170000000
+      }
+    ];
+
     const defaultDatabase = {
       users: initialUsers,
       nicknames: {},
@@ -1114,6 +1259,7 @@
         { id: 'm1', roomId: 'g_main', senderId: 'u_22', text: 'Teman-teman besok kumpul produksi tepat waktu ya!', time: '09:15', createdAt: '2026-11-15T02:15:00Z', replyTo: null },
         { id: 'm2', roomId: 'g_main', senderId: 'u_1', text: 'Siap, alat audio sudah aman semua.', time: '09:18', createdAt: '2026-11-15T02:18:00Z', replyTo: null }
       ],
+      ideaBank: defaultIdeaBank,
       projects: [
         {
           id: 'p_1',
@@ -1126,11 +1272,13 @@
           thumbnail: 'https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?w=600&auto=format&fit=crop&q=80',
           shootListTemplateUrl: 'https://docs.google.com/document/d/1IsnYDQgchgM8gdcXZ_Jou1tkPfxTkQigPbbh1JGszf8/edit?usp=sharing',
           storyboardTemplateUrl: 'https://canva.link/8f5qoypxe9yuwlz',
+          selectedIdeaId: 'id_1',
           ideas: [
             {
               id: 'id_1',
               title: 'Bangkit dari Bully Lewat Tari',
-              content: 'Film ini bercerita tentang seorang laki-laki penari yang diremehkan, namun membuktikan kualitasnya di panggung utama.',
+              genre: 'Drama',
+              content: 'Film ini bercerita tentang seorang laki-laki penari tradisional yang diremehkan teman-temannya, namun membuktikan kualitasnya di panggung utama sekolah.',
               authorId: 'u_4',
               likes: ['u_1', 'u_4', 'u_12', 'u_22']
             }
@@ -1155,12 +1303,19 @@
     };
 
     let db = JSON.parse(localStorage.getItem('zerava_v4_db')) || defaultDatabase;
+    if (!db.ideaBank || !Array.isArray(db.ideaBank) || db.ideaBank.length === 0) {
+      db.ideaBank = defaultIdeaBank;
+    }
+
     let currentUser = JSON.parse(localStorage.getItem('zerava_v4_user')) || null;
     let currentChatFilter = 'all';
     let currentRoom = { type: 'group', id: 'g_main' };
     let currentReply = null;
     let currentProjectId = 'p_1';
     let currentSubFeature = 'ide';
+    let prodMainTab = 'projects'; // 'projects' atau 'ideas'
+    let ideaBankSort = 'votes'; // 'votes' atau 'newest'
+    let preselectedBankIdeaForNewProj = '';
     let currentViewedMemberId = null;
     let currentViewedMaterialId = null;
     let navStack = ['home'];
@@ -1170,8 +1325,40 @@
       localStorage.setItem('zerava_v4_db', JSON.stringify(db));
     }
 
+    // Simpan Bank Ide Global ke Supabase (Menggunakan baris khusus di zerava_projects agar langsung real-time tanpa buat tabel SQL baru)
+    async function saveGlobalIdeaBankToSupabase() {
+      saveDbLocal();
+      if (!sb) return;
+      try {
+        await sb.from('zerava_projects').upsert([{
+          id: BANK_IDE_ROW_ID,
+          title: '__BANK_IDE_GLOBAL__',
+          description: 'Penyimpanan Bank Ide Global Zerava',
+          start_date: '2026-01-01',
+          end_date: '2026-12-31',
+          deadline: '2026-12-31',
+          status: 'SYSTEM',
+          thumbnail: '',
+          shootlist_template_url: '',
+          storyboard_template_url: '',
+          ideas: db.ideaBank,
+          naskah: [],
+          shootlist: [],
+          storyboard: [],
+          dokumen: []
+        }]);
+      } catch (e) {}
+    }
+
+    // Cek apakah suatu ide sudah diangkat ke dalam salah satu Project
+    function getProjectLinkedToIdea(ideaId) {
+      return db.projects.find(p =>
+        p.selectedIdeaId === ideaId ||
+        (Array.isArray(p.ideas) && p.ideas.some(i => i.id === ideaId))
+      );
+    }
+
     // ---------------- FILTER PRIVASI NOTIFIKASI & NAVIGASI LANGSUNG ----------------
-    // Menyimpan daftar ID notifikasi yang sudah diklik/dihapus oleh user ini
     function getDismissedNotifIds() {
       if (!currentUser) return [];
       return JSON.parse(localStorage.getItem(`zerava_dismissed_notifs_${currentUser.id}`) || '[]');
@@ -1186,7 +1373,6 @@
       }
     }
 
-    // Mengecek apakah sebuah notifikasi ditujukan untuk currentUser (Mencegah DM bocor ke orang lain!)
     function isNotificationVisibleForMe(notif) {
       if (!currentUser || !notif) return false;
       const dismissed = getDismissedNotifIds();
@@ -1194,20 +1380,17 @@
 
       const rawPage = notif.page || '';
       if (!rawPage.includes('|')) {
-        // Jika format lama berupa 'Chat ke ...', sembunyikan jika bukan untuk kita
         if (notif.title && notif.title.startsWith('Chat ke ')) return false;
         return true;
       }
 
       const [targetSpec] = rawPage.split('|');
 
-      // 1. Notifikasi DM Pribadi: HANYA tampil untuk penerima DM (targetId)
       if (targetSpec.startsWith('user:')) {
         const targetUserId = targetSpec.split(':')[1];
         return currentUser.id === targetUserId;
       }
 
-      // 2. Notifikasi Chat Grup: HANYA tampil untuk anggota grup tersebut (kecuali pengirimnya sendiri)
       if (targetSpec.startsWith('group:')) {
         const parts = targetSpec.split(':');
         const groupId = parts[1];
@@ -1218,7 +1401,6 @@
         return (grp.members || []).includes(currentUser.id);
       }
 
-      // 3. Notifikasi Umum (Project / Class): tampil untuk semua member
       return true;
     }
 
@@ -1226,13 +1408,17 @@
       return db.notifications.filter(n => isNotificationVisibleForMe(n));
     }
 
-    // Membuka halaman/ruang spesifik saat notifikasi diklik
     function openNotificationDestination(rawPageStr) {
       if (!rawPageStr) {
         navigateTo('home');
         return;
       }
       const routePart = rawPageStr.includes('|') ? rawPageStr.split('|')[1] : rawPageStr;
+
+      if (routePart === 'bank-ide') {
+        openProductionWithTab('ideas');
+        return;
+      }
 
       if (routePart.startsWith('dm:')) {
         const partnerId = routePart.split(':')[1];
@@ -1260,7 +1446,7 @@
           navigateTo('project-detail');
           return;
         }
-        navigateTo('production');
+        openProductionWithTab('projects');
         return;
       }
 
@@ -1277,15 +1463,10 @@
       navigateTo(routePart || 'home');
     }
 
-    // Saat item notifikasi di halaman Notifikasi diklik: Langsung hapus & menuju halaman tujuan!
     async function handleNotificationItemClick(notifId) {
       const notif = db.notifications.find(n => n.id === notifId);
       const targetRoute = notif ? notif.page : 'home';
-
-      // Hapus langsung tanpa pop-up
       await deleteSingleNotification(notifId);
-
-      // Menuju halaman yang disebutkan
       openNotificationDestination(targetRoute);
     }
 
@@ -1361,7 +1542,6 @@
       }
     }
 
-    // Pembuatan Notifikasi dengan Target Privasi & Spesifik Route
     async function createAndBroadcastNotification(type, title, body, encodedPageRoute = 'all|home', targetUserIds = null) {
       const newNotif = {
         id: 'n_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
@@ -1385,7 +1565,6 @@
         } catch (e) {}
       }
 
-      // Kirim sinyal Background Web Push HANYA ke targetUserIds yang berhak menerima!
       try {
         fetch('/api/send-push', {
           method: 'POST',
@@ -1401,7 +1580,7 @@
       } catch (e) {}
     }
 
-    // ---------------- REALTIME INSTAN + FAST SYNC ANTI-DELAY ----------------
+    // ---------------- REALTIME INSTAN + FAST SYNC ----------------
     let knownMsgIds = new Set();
     let knownNotifIds = new Set();
     let isSyncing = false;
@@ -1422,7 +1601,6 @@
       return grp ? (grp.members || []).includes(currentUser.id) : true;
     }
 
-    // Fungsi Fast-Sync Khusus Chat & Notifikasi (Berjalan setiap 2.5 detik agar tidak pernah delay)
     async function fastSyncChatAndNotifs() {
       if (!sb || !currentUser) return;
       try {
@@ -1534,12 +1712,41 @@
         }
 
         if (pRes.data && pRes.data.length > 0) {
-          db.projects = pRes.data.map(r => ({
-            id: r.id, title: r.title, desc: r.description, startDate: r.start_date, endDate: r.end_date,
-            deadline: r.deadline, status: r.status, thumbnail: r.thumbnail,
-            shootListTemplateUrl: r.shootlist_template_url, storyboardTemplateUrl: r.storyboard_template_url,
-            ideas: r.ideas || [], naskah: r.naskah || [], shootlist: r.shootlist || [], storyboard: r.storyboard || [], dokumen: r.dokumen || []
-          }));
+          // Pisahkan baris khusus Bank Ide Global dari daftar Project Film
+          const bankRow = pRes.data.find(r => r.id === BANK_IDE_ROW_ID);
+          const realProjectRows = pRes.data.filter(r => r.id !== BANK_IDE_ROW_ID);
+
+          if (bankRow && Array.isArray(bankRow.ideas) && bankRow.ideas.length > 0) {
+            db.ideaBank = bankRow.ideas;
+          }
+
+          if (realProjectRows.length > 0) {
+            db.projects = realProjectRows.map(r => {
+              const pIdeas = r.ideas || [];
+              // Gabungkan ide lama yang ada di project ke dalam Bank Ide Global agar tidak ada ide yang hilang
+              pIdeas.forEach(oldIdea => {
+                if (oldIdea && oldIdea.id && !db.ideaBank.some(b => b.id === oldIdea.id)) {
+                  db.ideaBank.push({
+                    ...oldIdea,
+                    genre: oldIdea.genre || 'Drama',
+                    createdAt: oldIdea.createdAt || Date.now()
+                  });
+                }
+              });
+              return {
+                id: r.id, title: r.title, desc: r.description, startDate: r.start_date, endDate: r.end_date,
+                deadline: r.deadline, status: r.status, thumbnail: r.thumbnail,
+                shootListTemplateUrl: r.shootlist_template_url, storyboardTemplateUrl: r.storyboard_template_url,
+                selectedIdeaId: pIdeas[0]?.id || '',
+                ideas: pIdeas, naskah: r.naskah || [], shootlist: r.shootlist || [], storyboard: r.storyboard || [], dokumen: r.dokumen || []
+              };
+            });
+          }
+
+          // Jika baris Bank Ide belum ada di Supabase, inisialisasikan otomatis
+          if (!bankRow) {
+            saveGlobalIdeaBankToSupabase();
+          }
         }
 
         if (cRes.data && cRes.data.length > 0) {
@@ -1569,8 +1776,7 @@
 
     function setupRealtimeListeners() {
       if (!sb) return;
-      sb.channel('zerava-instant-v7')
-        // Tangkap pesan chat baru secara instan dari payload tanpa menunggu fetch tabel lain!
+      sb.channel('zerava-instant-v8')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'zerava_messages' }, (payload) => {
           const r = payload.new;
           if (!r) return;
@@ -1627,7 +1833,6 @@
         .on('postgres_changes', { event: '*', schema: 'public', table: 'zerava_groups' }, () => syncFromSupabase(false))
         .subscribe();
 
-      // Fast-Sync ringan setiap 2.5 detik agar chat masuk seketika tanpa perlu refresh manual
       setInterval(() => {
         if (currentUser) fastSyncChatAndNotifs();
       }, 2500);
@@ -1639,7 +1844,10 @@
       if (topPage === 'home') renderHomePage();
       if (topPage === 'chat') renderChatListPage();
       if (topPage === 'chat-room') renderChatRoomPage();
-      if (topPage === 'production') renderProductionList();
+      if (topPage === 'production') {
+        renderProductionList();
+        renderIdeaBankList();
+      }
       if (topPage === 'project-detail') renderProjectDetailPage();
       if (topPage === 'class') renderClassList();
       if (topPage === 'notifications') renderNotificationsPage();
@@ -1706,7 +1914,7 @@
       const rootTabMap = {
         'home': 'home',
         'chat': 'chat', 'chat-room': 'chat', 'create-group': 'chat', 'group-info': 'chat', 'member-profile': 'chat',
-        'production': 'production', 'create-project': 'production', 'project-detail': 'production', 'project-add-item': 'production',
+        'production': 'production', 'create-project': 'production', 'create-idea': 'production', 'project-detail': 'production', 'project-add-item': 'production',
         'class': 'class', 'create-class': 'class', 'class-detail': 'class',
         'profile': 'profile', 'admin': 'profile'
       };
@@ -1724,7 +1932,6 @@
         window.history.pushState({ pageId }, '', `#${pageId}`);
       }
 
-      // PENTING: Tampilkan elemen halaman terlebih dahulu SEBELUM renderChatRoomPage agar scrollHeight terbaca akurat!
       if (target) {
         target.classList.remove('hidden');
         if (pageId !== 'chat-room') {
@@ -1740,7 +1947,10 @@
       else if (pageId === 'create-group') renderCreateGroupPage();
       else if (pageId === 'group-info') renderGroupInfoPage();
       else if (pageId === 'member-profile') renderMemberProfilePage();
-      else if (pageId === 'production') renderProductionList();
+      else if (pageId === 'production') {
+        switchProductionMainTab(prodMainTab);
+      }
+      else if (pageId === 'create-project') populateCreateProjectForm();
       else if (pageId === 'project-detail') renderProjectDetailPage();
       else if (pageId === 'class') renderClassList();
       else if (pageId === 'class-detail') renderClassDetailPage();
@@ -1858,7 +2068,6 @@
       await syncFromSupabase(false);
       setupRealtimeListeners();
 
-      // Jika dibuka dari klik Push Notification di luar aplikasi, langsung arahkan ke tujuannya
       if (params.get('notif_route') && currentUser) {
         const route = params.get('notif_route');
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -1919,10 +2128,51 @@
       );
     }
 
-    // 1. HOME PAGE
+    // ---------------- 1. HOME PAGE (DENGAN TOP 3 BANK IDE) ----------------
     function renderHomePage() {
       document.getElementById('homeUserName').textContent = getMemberDisplayName(currentUser.id);
-      const html = db.classMaterials.slice(0, 4).map(m => `
+
+      // Render Top 3 Ide Terpopuler dari Bank Ide Global
+      const topIdeas = [...(db.ideaBank || [])]
+        .sort((a, b) => (b.likes?.length || 0) - (a.likes?.length || 0))
+        .slice(0, 3);
+
+      const topIdeasHtml = topIdeas.map((idea, idx) => {
+        const liked = (idea.likes || []).includes(currentUser.id);
+        const linkedProj = getProjectLinkedToIdea(idea.id);
+        return `
+          <div class="card-interactive bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl p-4 flex flex-col justify-between gap-3 shadow-sm">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <span class="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-500 text-[10px] font-extrabold">
+                  #${idx + 1} • ${idea.genre || 'Drama'}
+                </span>
+                <button onclick="toggleGlobalIdeaVote('${idea.id}')" class="btn-interactive px-2.5 py-1 rounded-xl border ${liked ? 'bg-red-500/20 border-red-500 text-red-500' : 'border-slate-300 dark:border-zborder text-slate-500'} font-extrabold text-[11px] flex items-center gap-1">
+                  <i class="fa-solid fa-heart"></i> <span>${(idea.likes || []).length}</span>
+                </button>
+              </div>
+              <h4 onclick="openProductionWithTab('ideas')" class="cursor-pointer font-extrabold text-sm text-slate-900 dark:text-white line-clamp-1 hover:underline">${idea.title}</h4>
+              <p class="text-xs text-slate-500 dark:text-gray-400 line-clamp-2 leading-relaxed">${idea.content}</p>
+            </div>
+            <div class="pt-2 border-t border-slate-100 dark:border-zborder flex items-center justify-between gap-2 text-[10px]">
+              <span class="text-slate-400 truncate">Oleh: <b class="text-slate-700 dark:text-gray-200">${getMemberDisplayName(idea.authorId)}</b></span>
+              ${linkedProj ? `
+                <span onclick="openProjectDetailPage('${linkedProj.id}')" class="cursor-pointer px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-500 font-bold truncate">
+                  <i class="fa-solid fa-check mr-0.5"></i> Digarap
+                </span>
+              ` : `
+                <button onclick="openCreateProjectWithIdea('${idea.id}')" class="font-extrabold text-zteal dark:text-zbeige hover:underline shrink-0">
+                  Jadikan Project →
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('') || '<div class="text-xs text-slate-400 py-4 col-span-3">Belum ada ide cerita di Bank Ide. Yuk lempar ide pertama!</div>';
+      setHtmlIfChanged('homeTopIdeasGrid', topIdeasHtml);
+
+      // Render What's New (Zerava Class)
+      const whatsNewHtml = db.classMaterials.slice(0, 4).map(m => `
         <div onclick="openMaterialDetailPage('${m.id}')" class="card-interactive cursor-pointer bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl overflow-hidden shadow-sm">
           <img src="${m.thumbnail}" loading="lazy" decoding="async" class="w-full h-36 object-cover" />
           <div class="p-4 space-y-1">
@@ -1932,10 +2182,10 @@
           </div>
         </div>
       `).join('') || '<div class="text-xs text-slate-400 py-4">Belum ada materi terbaru.</div>';
-      setHtmlIfChanged('homeWhatsNewGrid', html);
+      setHtmlIfChanged('homeWhatsNewGrid', whatsNewHtml);
     }
 
-    // 2. CHAT LIST PAGE
+    // ---------------- 2. CHAT LIST & ROOM ----------------
     function setChatTab(tab) {
       currentChatFilter = tab;
       ['all', 'group', 'member'].forEach(t => {
@@ -2048,7 +2298,6 @@
       setHtmlIfChanged('chatDirectoryList', html, force);
     }
 
-    // Pastikan setiap kali ruang chat dibuka, otomatis scroll ke paling bawah (chat terbaru)!
     function scrollToBottomChat() {
       const box = document.getElementById('chatRoomMessages');
       if (!box) return;
@@ -2226,7 +2475,6 @@
         }]);
       }
 
-      // PRIVASI NOTIFIKASI DM VS GRUP:
       if (currentRoom.type === 'group') {
         const g = db.groups.find(x => x.id === currentRoom.id);
         const groupMembers = g ? (g.members || []).filter(id => id !== currentUser.id) : null;
@@ -2238,7 +2486,6 @@
           groupMembers
         );
       } else {
-        // DM PRIBADI: Hanya dikirim ke ID penerima (currentRoom.id), TIDAK ke member lain!
         const recipientId = currentRoom.id;
         await createAndBroadcastNotification(
           'chat',
@@ -2434,43 +2681,273 @@
       }
     }
 
-    // 3. PRODUCTION FILM
+    // =========================================================================
+    // 3. PRODUCTION FILM & BANK IDE GLOBAL (OPSI B)
+    // =========================================================================
+    function openProductionWithTab(tabName) {
+      prodMainTab = tabName;
+      navigateTo('production');
+    }
+
+    function switchProductionMainTab(tabName) {
+      prodMainTab = tabName;
+      const btnProj = document.getElementById('prodTabBtn-projects');
+      const btnIdeas = document.getElementById('prodTabBtn-ideas');
+      const viewProj = document.getElementById('prodSubView-projects');
+      const viewIdeas = document.getElementById('prodSubView-ideas');
+
+      if (tabName === 'projects') {
+        btnProj.className = 'btn-interactive py-2.5 rounded-xl font-extrabold zerava-btn-primary flex items-center justify-center gap-2';
+        btnIdeas.className = 'btn-interactive py-2.5 rounded-xl font-extrabold text-slate-500 dark:text-gray-400 flex items-center justify-center gap-2';
+        viewProj.classList.remove('hidden');
+        viewIdeas.classList.add('hidden');
+        renderProductionList();
+      } else {
+        btnIdeas.className = 'btn-interactive py-2.5 rounded-xl font-extrabold zerava-btn-primary flex items-center justify-center gap-2';
+        btnProj.className = 'btn-interactive py-2.5 rounded-xl font-extrabold text-slate-500 dark:text-gray-400 flex items-center justify-center gap-2';
+        viewIdeas.classList.remove('hidden');
+        viewProj.classList.add('hidden');
+        renderIdeaBankList();
+      }
+    }
+
+    function setIdeaBankSort(sortType) {
+      ideaBankSort = sortType;
+      document.getElementById('ideaSortBtn-votes').className = sortType === 'votes'
+        ? 'px-3.5 py-1.5 rounded-xl font-bold zerava-btn-primary'
+        : 'px-3.5 py-1.5 rounded-xl font-bold text-slate-500 dark:text-gray-400';
+      document.getElementById('ideaSortBtn-newest').className = sortType === 'newest'
+        ? 'px-3.5 py-1.5 rounded-xl font-bold zerava-btn-primary'
+        : 'px-3.5 py-1.5 rounded-xl font-bold text-slate-500 dark:text-gray-400';
+      renderIdeaBankList(true);
+    }
+
+    function renderIdeaBankList(force = false) {
+      const q = (document.getElementById('ideaBankSearchIn')?.value || '').toLowerCase();
+      let list = [...(db.ideaBank || [])].filter(idea => {
+        if (!q) return true;
+        const authorName = getMemberDisplayName(idea.authorId).toLowerCase();
+        return (
+          (idea.title || '').toLowerCase().includes(q) ||
+          (idea.content || '').toLowerCase().includes(q) ||
+          (idea.genre || '').toLowerCase().includes(q) ||
+          authorName.includes(q)
+        );
+      });
+
+      if (ideaBankSort === 'votes') {
+        list.sort((a, b) => (b.likes?.length || 0) - (a.likes?.length || 0));
+      } else {
+        list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      }
+
+      const html = list.map((idea, index) => {
+        const liked = (idea.likes || []).includes(currentUser.id);
+        const linkedProj = getProjectLinkedToIdea(idea.id);
+        const voterNames = (idea.likes || []).map(uid => getMemberDisplayName(uid)).join(', ');
+
+        return `
+          <div class="card-interactive p-5 rounded-3xl bg-white dark:bg-zcard border border-slate-200 dark:border-zborder shadow-sm space-y-3">
+            <div class="flex items-start justify-between gap-3">
+              <div class="space-y-1 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="px-2.5 py-0.5 rounded-full bg-zpurple/20 text-zteal dark:text-zbeige text-[10px] font-extrabold">
+                    ${idea.genre || 'Drama'}
+                  </span>
+                  ${linkedProj ? `
+                    <span onclick="openProjectDetailPage('${linkedProj.id}')" class="cursor-pointer px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 text-[10px] font-extrabold hover:underline">
+                      <i class="fa-solid fa-circle-check mr-1"></i>Digarap di: ${linkedProj.title}
+                    </span>
+                  ` : `
+                    <span class="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-500 text-[10px] font-bold">
+                      Menunggu Voting / Siap Digarap
+                    </span>
+                  `}
+                </div>
+                <h3 class="font-extrabold text-base text-slate-900 dark:text-white pt-0.5">${idea.title}</h3>
+              </div>
+
+              <div class="flex items-center gap-2 shrink-0">
+                <button onclick="toggleGlobalIdeaVote('${idea.id}')" class="btn-interactive px-4 py-2 rounded-2xl border ${liked ? 'bg-red-500/20 border-red-500 text-red-500' : 'border-slate-300 dark:border-zborder text-slate-600 dark:text-gray-300'} font-extrabold text-xs flex items-center gap-1.5">
+                  <i class="fa-solid fa-heart"></i> <span>${(idea.likes || []).length} Vote</span>
+                </button>
+                <button onclick="confirmDeleteGlobalIdea('${idea.id}', '${idea.title.replace(/'/g, '')}')" title="Hapus Ide" class="w-9 h-9 rounded-2xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white text-xs flex items-center justify-center">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+
+            <p class="text-xs text-slate-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">${idea.content}</p>
+
+            <div class="pt-3 border-t border-slate-100 dark:border-zborder flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-[11px]">
+              <div class="text-slate-400">
+                Di-pitching oleh <b onclick="openMemberProfilePage('${idea.authorId}')" class="text-slate-800 dark:text-white cursor-pointer hover:underline">${getMemberDisplayName(idea.authorId)}</b>
+                ${voterNames ? `<span class="block text-[10px] text-slate-400 mt-0.5">Disukai oleh: ${voterNames}</span>` : ''}
+              </div>
+
+              ${linkedProj ? `
+                <button onclick="openProjectDetailPage('${linkedProj.id}')" class="btn-interactive px-4 py-2 rounded-xl bg-slate-100 dark:bg-zdark text-zteal dark:text-zbeige font-extrabold text-xs self-start sm:self-auto">
+                  Lihat Project Film <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
+              ` : `
+                <button onclick="openCreateProjectWithIdea('${idea.id}')" class="zerava-btn-primary btn-interactive px-4 py-2 rounded-xl font-extrabold text-xs self-start sm:self-auto">
+                  <i class="fa-solid fa-clapperboard mr-1.5"></i> Angkat Jadi Project
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('') || '<div class="p-8 text-center text-xs text-slate-400 bg-white dark:bg-zcard rounded-3xl border border-slate-200 dark:border-zborder">Belum ada ide cerita yang ditemukan. Yuk lempar ide barumu!</div>';
+
+      setHtmlIfChanged('ideaBankListContainer', html, force);
+    }
+
+    async function handleSaveGlobalIdea(e) {
+      e.preventDefault();
+      const title = document.getElementById('globalIdeaTitleIn').value.trim();
+      const genre = document.getElementById('globalIdeaGenreIn').value;
+      const content = document.getElementById('globalIdeaContentIn').value.trim();
+
+      const newIdea = {
+        id: 'id_' + Date.now(),
+        title,
+        genre,
+        content,
+        authorId: currentUser.id,
+        likes: [currentUser.id],
+        createdAt: Date.now()
+      };
+
+      db.ideaBank.unshift(newIdea);
+      await saveGlobalIdeaBankToSupabase();
+
+      await createAndBroadcastNotification(
+        'production',
+        `Ide Cerita Baru: ${title}`,
+        `${currentUser.name} melempar ide film (${genre}) ke Bank Ide. Yuk ikut voting!`,
+        `all|bank-ide`
+      );
+
+      e.target.reset();
+      openProductionWithTab('ideas');
+      showTopPopup('Ide Berhasil Dipublikasikan!', `Ide <b>"${title}"</b> sudah masuk ke Bank Ide & siap di-vote oleh semua kru.`);
+    }
+
+    async function toggleGlobalIdeaVote(ideaId) {
+      const idea = db.ideaBank.find(i => i.id === ideaId);
+      if (!idea) return;
+      if (!Array.isArray(idea.likes)) idea.likes = [];
+
+      if (idea.likes.includes(currentUser.id)) {
+        idea.likes = idea.likes.filter(id => id !== currentUser.id);
+      } else {
+        idea.likes.push(currentUser.id);
+      }
+
+      // Sinkronkan juga jika ide tersebut sudah tertaut di salah satu project
+      db.projects.forEach(p => {
+        if (Array.isArray(p.ideas)) {
+          const match = p.ideas.find(x => x.id === ideaId);
+          if (match) match.likes = [...idea.likes];
+        }
+      });
+
+      await saveGlobalIdeaBankToSupabase();
+      if (activePageId === 'home') renderHomePage();
+      if (activePageId === 'production') renderIdeaBankList(true);
+      if (activePageId === 'project-detail') renderProjectDetailPage();
+    }
+
+    function confirmDeleteGlobalIdea(ideaId, ideaTitle) {
+      openConfirmDialog('Hapus Ide dari Bank Ide?', `Apakah kamu yakin ingin menghapus ide <b>"${ideaTitle}"</b>?`, async () => {
+        db.ideaBank = db.ideaBank.filter(i => i.id !== ideaId);
+        await saveGlobalIdeaBankToSupabase();
+        if (activePageId === 'home') renderHomePage();
+        if (activePageId === 'production') renderIdeaBankList(true);
+        showTopPopup('Ide Dihapus', `Ide <b>${ideaTitle}</b> telah dihapus dari Bank Ide.`, 'fa-trash-can');
+      });
+    }
+
+    // Membuka halaman Buat Project Baru (bisa membawa ID Ide yang dipilih dari Bank Ide)
+    function openCreateProjectWithIdea(ideaId = '') {
+      preselectedBankIdeaForNewProj = ideaId || '';
+      navigateTo('create-project');
+    }
+
+    function populateCreateProjectForm() {
+      const selectEl = document.getElementById('projSelectBankIdeaIn');
+      if (!selectEl) return;
+
+      const sortedIdeas = [...(db.ideaBank || [])].sort((a, b) => (b.likes?.length || 0) - (a.likes?.length || 0));
+      selectEl.innerHTML = `<option value="">-- Buat Project Tanpa Mengambil dari Bank Ide --</option>` +
+        sortedIdeas.map(idea => {
+          const linked = getProjectLinkedToIdea(idea.id);
+          const statusText = linked ? ` [Sudah di: ${linked.title}]` : '';
+          return `<option value="${idea.id}">🔥 [${(idea.likes || []).length} Vote] ${idea.title} (${idea.genre || 'Drama'} — oleh ${getMemberDisplayName(idea.authorId)})${statusText}</option>`;
+        }).join('');
+
+      if (preselectedBankIdeaForNewProj) {
+        selectEl.value = preselectedBankIdeaForNewProj;
+        handleSelectBankIdeaForProject(preselectedBankIdeaForNewProj);
+      } else {
+        selectEl.value = '';
+      }
+    }
+
+    function handleSelectBankIdeaForProject(ideaId) {
+      if (!ideaId) return;
+      const idea = db.ideaBank.find(i => i.id === ideaId);
+      if (!idea) return;
+      const titleIn = document.getElementById('projTitleIn');
+      const descIn = document.getElementById('projDescIn');
+      titleIn.value = `Project Film: ${idea.title}`;
+      descIn.value = `[Genre: ${idea.genre || 'Drama'}] ${idea.content}`;
+    }
+
     function renderProductionList(force = false) {
       const q = (document.getElementById('projSearchInput')?.value || '').toLowerCase();
-      const html = db.projects.filter(p => p.title.toLowerCase().includes(q)).map(p => `
-        <div class="card-interactive bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl overflow-hidden shadow-sm flex flex-col justify-between">
-          <div onclick="openProjectDetailPage('${p.id}')" class="cursor-pointer">
-            <div class="h-44 relative">
-              <img src="${p.thumbnail}" loading="lazy" decoding="async" class="w-full h-full object-cover" />
-              <span class="zerava-btn-primary absolute top-3 left-3 px-3 py-1 rounded-full text-[11px] font-extrabold">
-                ${p.status}
-              </span>
+      const html = db.projects.filter(p => p.title.toLowerCase().includes(q)).map(p => {
+        const linkedIdea = db.ideaBank.find(i => i.id === p.selectedIdeaId) || (p.ideas && p.ideas[0]);
+        return `
+          <div class="card-interactive bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl overflow-hidden shadow-sm flex flex-col justify-between">
+            <div onclick="openProjectDetailPage('${p.id}')" class="cursor-pointer">
+              <div class="h-44 relative">
+                <img src="${p.thumbnail}" loading="lazy" decoding="async" class="w-full h-full object-cover" />
+                <span class="zerava-btn-primary absolute top-3 left-3 px-3 py-1 rounded-full text-[11px] font-extrabold">
+                  ${p.status}
+                </span>
+              </div>
+              <div class="p-5 space-y-2">
+                ${linkedIdea ? `
+                  <div class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-500 text-[10px] font-bold">
+                    <i class="fa-solid fa-lightbulb"></i> Ide: ${linkedIdea.title} (${(linkedIdea.likes || []).length} Vote)
+                  </div>
+                ` : ''}
+                <h3 class="font-extrabold text-base text-slate-900 dark:text-white">${p.title}</h3>
+                <p class="text-xs text-slate-500 dark:text-gray-400 line-clamp-2">${p.desc}</p>
+              </div>
             </div>
-            <div class="p-5 space-y-2">
-              <h3 class="font-extrabold text-base text-slate-900 dark:text-white">${p.title}</h3>
-              <p class="text-xs text-slate-500 dark:text-gray-400 line-clamp-2">${p.desc}</p>
+            <div class="px-5 pb-5 pt-3 border-t border-slate-100 dark:border-zborder text-xs space-y-2">
+              <div class="flex justify-between">
+                <span class="text-slate-400">Produksi:</span>
+                <span class="font-bold text-slate-800 dark:text-white">${formatIndoDate(p.startDate)} – ${formatIndoDate(p.endDate)}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-slate-400">Deadline: <b class="text-zteal dark:text-zbeige">${formatIndoDate(p.deadline)}</b></span>
+                <button onclick="confirmDeleteProject('${p.id}', '${p.title.replace(/'/g, '')}')" title="Hapus Project" class="px-2.5 py-1.5 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white text-xs font-bold">
+                  <i class="fa-solid fa-trash-can mr-1"></i> Hapus
+                </button>
+              </div>
             </div>
           </div>
-          <div class="px-5 pb-5 pt-3 border-t border-slate-100 dark:border-zborder text-xs space-y-2">
-            <div class="flex justify-between">
-              <span class="text-slate-400">Produksi:</span>
-              <span class="font-bold text-slate-800 dark:text-white">${formatIndoDate(p.startDate)} – ${formatIndoDate(p.endDate)}</span>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-slate-400">Deadline: <b class="text-zteal dark:text-zbeige">${formatIndoDate(p.deadline)}</b></span>
-              <button onclick="confirmDeleteProject('${p.id}', '${p.title.replace(/'/g, '')}')" title="Hapus Project" class="px-2.5 py-1.5 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white text-xs font-bold">
-                <i class="fa-solid fa-trash-can mr-1"></i> Hapus
-              </button>
-            </div>
-          </div>
-        </div>
-      `).join('') || '<div class="text-xs text-slate-400 py-8 text-center col-span-2">Belum ada project film.</div>';
+        `;
+      }).join('') || '<div class="text-xs text-slate-400 py-8 text-center col-span-2">Belum ada project film.</div>';
 
       setHtmlIfChanged('productionProjectsGrid', html, force);
     }
 
     function confirmDeleteProject(projId, projTitle) {
-      openConfirmDialog('Hapus Project Film?', `Seluruh ide, naskah, shoot list, storyboard, dan dokumen di dalam project <b>"${projTitle}"</b> akan ikut terhapus.`, async () => {
+      openConfirmDialog('Hapus Project Film?', `Seluruh naskah, shoot list, storyboard, dan dokumen di dalam project <b>"${projTitle}"</b> akan ikut terhapus (Ide asli di Bank Ide tetap aman).`, async () => {
         db.projects = db.projects.filter(p => p.id !== projId);
         saveDbLocal();
         if (sb) await sb.from('zerava_projects').delete().eq('id', projId);
@@ -2489,6 +2966,9 @@
         thumbUrl = await uploadFileToCloud(thumbIn.files[0]);
       }
 
+      const chosenIdeaId = document.getElementById('projSelectBankIdeaIn').value;
+      const chosenIdeaObj = db.ideaBank.find(i => i.id === chosenIdeaId);
+
       const newProj = {
         id: 'p_' + Date.now(),
         title: document.getElementById('projTitleIn').value.trim(),
@@ -2500,9 +2980,12 @@
         thumbnail: thumbUrl,
         shootListTemplateUrl: 'https://docs.google.com/document/d/1IsnYDQgchgM8gdcXZ_Jou1tkPfxTkQigPbbh1JGszf8/edit?usp=sharing',
         storyboardTemplateUrl: 'https://canva.link/8f5qoypxe9yuwlz',
-        ideas: [], naskah: [], shootlist: [], storyboard: [], dokumen: []
+        selectedIdeaId: chosenIdeaObj ? chosenIdeaObj.id : '',
+        ideas: chosenIdeaObj ? [chosenIdeaObj] : [],
+        naskah: [], shootlist: [], storyboard: [], dokumen: []
       };
 
+      preselectedBankIdeaForNewProj = '';
       db.projects.unshift(newProj);
       saveDbLocal();
 
@@ -2512,14 +2995,14 @@
           start_date: newProj.startDate, end_date: newProj.endDate, deadline: newProj.deadline,
           status: newProj.status, thumbnail: newProj.thumbnail,
           shootlist_template_url: newProj.shootListTemplateUrl, storyboard_template_url: newProj.storyboardTemplateUrl,
-          ideas: [], naskah: [], shootlist: [], storyboard: [], dokumen: []
+          ideas: newProj.ideas, naskah: [], shootlist: [], storyboard: [], dokumen: []
         }]);
       }
 
       await createAndBroadcastNotification(
         'production',
         `Project Film Baru: ${newProj.title}`,
-        `${currentUser.name} menambahkan project "${newProj.title}"`,
+        `${currentUser.name} membuat project "${newProj.title}"`,
         `all|project:${newProj.id}:ide`
       );
       openProjectDetailPage(newProj.id);
@@ -2591,6 +3074,26 @@
       showTopPopup('Tanggal Diperbarui', `Jadwal berhasil diubah menjadi <b>${formatIndoDate(value)}</b>.`);
     }
 
+    // Tautkan / Ganti Ide Project dari Bank Ide
+    async function linkBankIdeaToCurrentProject(ideaId) {
+      const p = db.projects.find(x => x.id === currentProjectId);
+      if (!p) return;
+      if (!ideaId) {
+        p.selectedIdeaId = '';
+        p.ideas = [];
+      } else {
+        const ideaObj = db.ideaBank.find(i => i.id === ideaId);
+        if (ideaObj) {
+          p.selectedIdeaId = ideaObj.id;
+          p.ideas = [ideaObj];
+        }
+      }
+      saveDbLocal();
+      await saveProjectToSupabase(p);
+      selectProjSubFeature('ide');
+      showTopPopup('Konsep Ide Diperbarui', 'Ide cerita untuk project ini berhasil diperbarui.');
+    }
+
     function selectProjSubFeature(feat) {
       currentSubFeature = feat;
       ['ide', 'naskah', 'shootlist', 'storyboard', 'dokumen'].forEach(f => {
@@ -2602,43 +3105,66 @@
 
       const p = db.projects.find(x => x.id === currentProjectId);
 
+      // TAB 1: MENAMPILKAN IDE TERPILIH DARI BANK IDE (OPSI B)
       if (feat === 'ide') {
+        const linkedIdeaId = p.selectedIdeaId || (p.ideas && p.ideas[0]?.id) || '';
+        const ideaObj = db.ideaBank.find(i => i.id === linkedIdeaId) || (p.ideas && p.ideas[0]) || null;
+        const sortedBank = [...(db.ideaBank || [])].sort((a, b) => (b.likes?.length || 0) - (a.likes?.length || 0));
+
         const html = `
           <div class="space-y-4">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <h3 class="font-extrabold text-sm text-slate-900 dark:text-white">1. Ide Cerita & Voting</h3>
-                <p class="text-xs text-slate-500 dark:text-gray-400">Berikan Like untuk memilih ide cerita yang akan diproduksi</p>
+                <h3 class="font-extrabold text-sm text-slate-900 dark:text-white">1. Ide Cerita & Konsep Terpilih</h3>
+                <p class="text-xs text-slate-500 dark:text-gray-400">Ide utama hasil voting dari Bank Ide yang diangkat menjadi project film ini</p>
               </div>
-              <button onclick="openProjectAddFormPage('ide')" class="zerava-btn-primary btn-interactive px-4 py-2 rounded-xl font-extrabold text-xs">
-                <i class="fa-solid fa-plus mr-1"></i> Tambah Ide
+              <button onclick="openProductionWithTab('ideas')" class="text-xs font-extrabold text-zteal dark:text-zbeige hover:underline self-start">
+                <i class="fa-solid fa-lightbulb mr-1"></i> Lihat Semua di Bank Ide →
               </button>
             </div>
-            <div class="space-y-3">
-              ${(p.ideas || []).map(idObj => {
-                const liked = idObj.likes.includes(currentUser.id);
-                return `
-                  <div class="p-4 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder flex items-start justify-between gap-4">
-                    <div class="space-y-1 flex-1">
-                      <h4 class="font-bold text-sm text-slate-900 dark:text-white">${idObj.title}</h4>
-                      <p class="text-xs text-slate-600 dark:text-gray-300 leading-relaxed">${idObj.content}</p>
-                      <div class="text-[11px] text-slate-400 pt-1">Oleh: ${getMemberDisplayName(idObj.authorId)}</div>
+
+            ${ideaObj ? `
+              <div class="p-5 rounded-2xl bg-slate-50 dark:bg-zdark border-2 border-zteal/30 dark:border-zbeige/40 space-y-3">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                      <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-500 text-[10px] font-extrabold">
+                        ${ideaObj.genre || 'Drama'}
+                      </span>
+                      <span class="px-2.5 py-0.5 rounded-full bg-red-500/15 text-red-500 text-[10px] font-extrabold">
+                        <i class="fa-solid fa-heart mr-1"></i>${(ideaObj.likes || []).length} Vote Member
+                      </span>
                     </div>
-                    <div class="flex items-center gap-2 shrink-0">
-                      <button onclick="toggleProjectIdeaLike('${idObj.id}')" class="btn-interactive px-3.5 py-2 rounded-xl border ${liked ? 'bg-red-500/20 border-red-500 text-red-500' : 'border-slate-300 dark:border-zborder text-slate-500'} font-bold text-xs flex items-center gap-1.5">
-                        <i class="fa-solid fa-heart"></i> <span>${idObj.likes.length}</span>
-                      </button>
-                      <button onclick="confirmDeleteProjectItem('ideas', '${idObj.id}', '${idObj.title.replace(/'/g, '')}')" title="Hapus Ide" class="w-9 h-9 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white text-xs flex items-center justify-center">
-                        <i class="fa-solid fa-trash-can"></i>
-                      </button>
-                    </div>
+                    <h4 class="font-extrabold text-base text-slate-900 dark:text-white pt-1">${ideaObj.title}</h4>
                   </div>
-                `;
-              }).join('') || '<div class="text-xs text-slate-400 text-center py-6">Belum ada ide yang ditambahkan.</div>'}
+                </div>
+                <p class="text-xs text-slate-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">${ideaObj.content}</p>
+                <div class="pt-2 border-t border-slate-200 dark:border-zborder text-[11px] text-slate-400">
+                  Pencetus Ide Asli: <b class="text-slate-800 dark:text-white">${getMemberDisplayName(ideaObj.authorId)}</b>
+                </div>
+              </div>
+            ` : `
+              <div class="p-6 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-center space-y-2">
+                <p class="text-xs text-slate-500 dark:text-gray-400">Project ini belum menautkan ide dari Bank Ide.</p>
+              </div>
+            `}
+
+            <div class="p-4 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder space-y-2">
+              <label class="block text-xs font-bold text-slate-700 dark:text-gray-300">
+                ${ideaObj ? 'Ganti / Pilih Ulang Ide dari Bank Ide:' : 'Pilih Ide Hasil Voting dari Bank Ide:'}
+              </label>
+              <select onchange="linkBankIdeaToCurrentProject(this.value)" class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-zcard border border-slate-200 dark:border-zborder text-xs font-semibold">
+                <option value="">-- Tidak Menautkan Ide --</option>
+                ${sortedBank.map(b => `
+                  <option value="${b.id}" ${b.id === (ideaObj?.id || '') ? 'selected' : ''}>
+                    🔥 [${(b.likes || []).length} Vote] ${b.title} (${b.genre || 'Drama'} — oleh ${getMemberDisplayName(b.authorId)})
+                  </option>
+                `).join('')}
+              </select>
             </div>
           </div>
         `;
-        setHtmlIfChanged('projectSubFeatureBody', html);
+        setHtmlIfChanged('projectSubFeatureBody', html, true);
         return;
       }
 
@@ -2723,91 +3249,33 @@
       });
     }
 
-    async function toggleProjectIdeaLike(ideaId) {
-      const p = db.projects.find(x => x.id === currentProjectId);
-      const idea = p?.ideas.find(i => i.id === ideaId);
-      if (!idea) return;
-      if (idea.likes.includes(currentUser.id)) {
-        idea.likes = idea.likes.filter(id => id !== currentUser.id);
-      } else {
-        idea.likes.push(currentUser.id);
-      }
-      saveDbLocal();
-      selectProjSubFeature('ide');
-      await saveProjectToSupabase(p);
-    }
-
     function openProjectAddFormPage(type) {
       const box = document.getElementById('projectAddItemFormBox');
-      if (type === 'ide') {
-        box.innerHTML = `
-          <form onsubmit="handleSaveProjectIdea(event)" class="space-y-4">
-            <h2 class="text-lg font-extrabold text-slate-900 dark:text-white">Tambah Ide Cerita Baru</h2>
-            <div>
-              <label class="block text-xs font-bold mb-1">Judul Ide *</label>
-              <input id="newIdeaTitle" type="text" required placeholder="Masukkan judul ide cerita"
-                class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs" />
-            </div>
-            <div>
-              <label class="block text-xs font-bold mb-1">Garis Besar Ide Cerita *</label>
-              <textarea id="newIdeaBody" rows="4" required placeholder="Tuliskan konsep dan garis besar cerita..."
-                class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs"></textarea>
-            </div>
-            <button type="submit" class="zerava-btn-primary btn-interactive w-full py-3 rounded-2xl font-extrabold text-xs">
-              Simpan Ide ke Project
-            </button>
-          </form>
-        `;
-      } else {
-        box.innerHTML = `
-          <form onsubmit="handleSaveProjectFile(event, '${type}')" class="space-y-4">
-            <h2 class="text-lg font-extrabold text-slate-900 dark:text-white">Upload ${type.toUpperCase()}</h2>
-            <p class="text-xs text-slate-500 dark:text-gray-400">Pilih file dari perangkat (Maksimal 15 MB) atau tempelkan Link Google Drive/Docs/Canva.</p>
-            <div>
-              <label class="block text-xs font-bold mb-1">Nama Dokumen / File *</label>
-              <input id="newProjFileName" type="text" required placeholder="Contoh: ${type} Revisi 1"
-                class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs" />
-            </div>
-            <div>
-              <label class="block text-xs font-bold mb-1">Pilih File (Maks 15 MB)</label>
-              <input id="newProjFileBlob" type="file" onchange="checkFileMax15MB(this, 'newProjFileUrl')"
-                class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-zteal file:text-white file:font-bold" />
-            </div>
-            <div>
-              <label class="block text-xs font-bold mb-1">Atau Link Dokumen (Wajib jika file > 15 MB)</label>
-              <input id="newProjFileUrl" type="url" placeholder="https://docs.google.com/..."
-                class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs" />
-            </div>
-            <button type="submit" class="zerava-btn-primary btn-interactive w-full py-3 rounded-2xl font-extrabold text-xs">
-              Upload Sekarang
-            </button>
-          </form>
-        `;
-      }
+      box.innerHTML = `
+        <form onsubmit="handleSaveProjectFile(event, '${type}')" class="space-y-4">
+          <h2 class="text-lg font-extrabold text-slate-900 dark:text-white">Upload ${type.toUpperCase()}</h2>
+          <p class="text-xs text-slate-500 dark:text-gray-400">Pilih file dari perangkat (Maksimal 15 MB) atau tempelkan Link Google Drive/Docs/Canva.</p>
+          <div>
+            <label class="block text-xs font-bold mb-1">Nama Dokumen / File *</label>
+            <input id="newProjFileName" type="text" required placeholder="Contoh: ${type} Revisi 1"
+              class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold mb-1">Pilih File (Maks 15 MB)</label>
+            <input id="newProjFileBlob" type="file" onchange="checkFileMax15MB(this, 'newProjFileUrl')"
+              class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-zteal file:text-white file:font-bold" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold mb-1">Atau Link Dokumen (Wajib jika file > 15 MB)</label>
+            <input id="newProjFileUrl" type="url" placeholder="https://docs.google.com/..."
+              class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs" />
+          </div>
+          <button type="submit" class="zerava-btn-primary btn-interactive w-full py-3 rounded-2xl font-extrabold text-xs">
+            Upload Sekarang
+          </button>
+        </form>
+      `;
       navigateTo('project-add-item');
-    }
-
-    async function handleSaveProjectIdea(e) {
-      e.preventDefault();
-      const p = db.projects.find(x => x.id === currentProjectId);
-      const title = document.getElementById('newIdeaTitle').value.trim();
-      p.ideas.unshift({
-        id: 'id_' + Date.now(),
-        title,
-        content: document.getElementById('newIdeaBody').value.trim(),
-        authorId: currentUser.id,
-        likes: [currentUser.id]
-      });
-      saveDbLocal();
-      await saveProjectToSupabase(p);
-      await createAndBroadcastNotification(
-        'production',
-        `Ide Baru di ${p.title}`,
-        `${currentUser.name} mengusulkan ide "${title}"`,
-        `all|project:${p.id}:ide`
-      );
-      goBack();
-      showTopPopup('Ide Berhasil Disimpan', 'Ide ceritamu sudah tampil di Project.');
     }
 
     async function handleSaveProjectFile(e, featKey) {
@@ -3146,7 +3614,6 @@
       setHtmlIfChanged('notifItemsContainer', html, true);
     }
 
-    // Hapus 1 notifikasi secara langsung TANPA pop-up pemberitahuan
     async function deleteSingleNotification(notifId) {
       const targetNotif = db.notifications.find(n => n.id === notifId);
       markNotifDismissedLocal(notifId);
@@ -3155,13 +3622,11 @@
       updateGlobalBadges();
       if (activePageId === 'notifications') renderNotificationsPage();
 
-      // Jika notifikasi DM pribadi, hapus juga dari tabel Supabase
       if (sb && targetNotif && (targetNotif.page || '').startsWith('user:')) {
         try { await sb.from('zerava_notifications').delete().eq('id', notifId); } catch (e) {}
       }
     }
 
-    // Bersihkan semua notifikasi TANPA memunculkan pop-up "Notifikasi Dibersihkan"
     function confirmClearAllNotifications() {
       const myNotifs = getMyVisibleNotifications();
       if (myNotifs.length === 0) return;
@@ -3189,6 +3654,9 @@
       }
 
       const myFiles = [];
+      (db.ideaBank || []).filter(i => i.authorId === currentUser.id).forEach(i => {
+        myFiles.push({ title: `${i.title} (${(i.likes || []).length} Vote)`, type: 'Bank Ide' });
+      });
       db.classMaterials.filter(m => m.uploaderId === currentUser.id).forEach(m => {
         myFiles.push({ title: m.title, type: 'Zerava Class' });
       });
@@ -3205,7 +3673,7 @@
           <span class="font-bold text-slate-900 dark:text-white">${f.title}</span>
           <span class="text-zteal dark:text-zbeige font-semibold">${f.type}</span>
         </div>
-      `).join('') || '<div class="text-xs text-slate-400">Belum ada materi atau dokumen yang kamu bagikan.</div>';
+      `).join('') || '<div class="text-xs text-slate-400">Belum ada ide, materi, atau dokumen yang kamu bagikan.</div>';
       setHtmlIfChanged('mySharedItemsBox', html);
     }
 
