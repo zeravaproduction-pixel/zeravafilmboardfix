@@ -53,7 +53,7 @@
       text-rendering: optimizeSpeed;
     }
 
-    /* KUNCI PERMANEN TEMA GELAP & TERANG AGAR TIDAK PERNAH BELANG DI HP */
+    /* KUNCI PERMANEN TEMA GELAP & TERANG */
     html.dark body {
       background-color: #11110F !important;
       color: #F5F2EB !important;
@@ -63,7 +63,6 @@
       color: #0F172A !important;
     }
 
-    /* Fallback CSS Murni untuk Warna Zerava (Anti Gagal Load) */
     .bg-zteal { background-color: #2B6E7E !important; }
     .bg-zbeige { background-color: #D8BBA8 !important; }
     .bg-zpurple { background-color: #9276A8 !important; }
@@ -79,7 +78,6 @@
     html.dark .dark\:text-white { color: #FFFFFF !important; }
     html.dark .dark\:border-zborder { border-color: #2C2B27 !important; }
 
-    /* Proteksi Kontras Saat Mode Terang Aktif */
     html:not(.dark) .dark\:text-white { color: #0F172A !important; }
     html:not(.dark) .dark\:text-gray-300 { color: #334155 !important; }
     html:not(.dark) .dark\:text-gray-400 { color: #64748B !important; }
@@ -87,7 +85,6 @@
     html:not(.dark) .dark\:bg-zdark { background-color: #F1F5F9 !important; }
     html:not(.dark) .dark\:border-zborder { border-color: #E2E8F0 !important; }
 
-    /* Hero Banner Gradient yang Konsisten di Gelap & Terang */
     .zerava-hero-banner {
       background: linear-gradient(135deg, #2B6E7E 0%, #163C46 55%, #0F172A 100%) !important;
       color: #FFFFFF !important;
@@ -97,7 +94,6 @@
       border-color: rgba(216, 187, 168, 0.25) !important;
     }
 
-    /* Tombol Utama Zerava (Selalu Terlihat Jelas di Tema Terang & Gelap) */
     .zerava-btn-primary {
       background-color: #2B6E7E !important;
       color: #FFFFFF !important;
@@ -110,7 +106,6 @@
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-thumb { background: rgba(150, 150, 150, 0.3); border-radius: 9999px; }
 
-    /* OPTIMASI GPU 60FPS */
     .gpu-layer {
       transform: translateZ(0);
       backface-visibility: hidden;
@@ -156,16 +151,18 @@
 <body class="min-h-screen flex flex-col select-none">
 
   <!-- =================================================================
-       1. TOP-CENTER NOTIFICATION POP-UP (DI TENGAH ATAS LAYAR)
+       1. TOP-CENTER NOTIFICATION POP-UP (BISA DIKLIK LANGSUNG KE TUJUAN)
        ================================================================= -->
   <div id="topCenterPopup" class="fixed top-4 left-1/2 -translate-x-1/2 z-[130] hidden w-[92%] max-w-md pointer-events-auto gpu-layer">
     <div class="bg-white dark:bg-zcard border-2 border-zteal/40 dark:border-zbeige/50 rounded-2xl p-4 shadow-2xl flex items-start gap-3.5">
-      <div class="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center text-lg bg-zteal/15 dark:bg-zbeige/20 text-zteal dark:text-zbeige">
-        <i id="topPopupIcon" class="fa-solid fa-bell"></i>
-      </div>
-      <div class="flex-1 min-w-0">
-        <h4 id="topPopupTitle" class="text-xs font-extrabold text-slate-900 dark:text-white truncate">Notifikasi</h4>
-        <p id="topPopupMessage" class="text-[11px] text-slate-600 dark:text-gray-300 leading-relaxed mt-0.5">Pesan notifikasi.</p>
+      <div id="topPopupClickArea" class="flex items-start gap-3.5 flex-1 min-w-0 cursor-pointer">
+        <div class="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center text-lg bg-zteal/15 dark:bg-zbeige/20 text-zteal dark:text-zbeige">
+          <i id="topPopupIcon" class="fa-solid fa-bell"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <h4 id="topPopupTitle" class="text-xs font-extrabold text-slate-900 dark:text-white truncate">Notifikasi</h4>
+          <p id="topPopupMessage" class="text-[11px] text-slate-600 dark:text-gray-300 leading-relaxed mt-0.5">Pesan notifikasi.</p>
+        </div>
       </div>
       <button onclick="closeTopPopup()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white px-1">
         <i class="fa-solid fa-xmark text-sm"></i>
@@ -666,7 +663,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 class="text-lg font-extrabold text-slate-900 dark:text-white">Notifikasi Aktivitas & Chat</h2>
-              <p id="pushStatusSubtitle" class="text-xs text-slate-500 dark:text-gray-400">Status Izin Notifikasi Perangkat: Mengecek...</p>
+              <p id="pushStatusSubtitle" class="text-xs text-slate-500 dark:text-gray-400">Ketuk notifikasi untuk langsung menuju halaman terkait</p>
             </div>
             <div class="flex flex-wrap gap-2">
               <button onclick="setupAndTestPushNotification()" class="zerava-btn-primary btn-interactive px-4 py-2.5 rounded-2xl font-extrabold text-xs">
@@ -873,7 +870,7 @@
   </div>
 
   <!-- =================================================================
-       JAVASCRIPT ENGINE (60 FPS + BACKGROUND WEB PUSH + NATIVE SOUND)
+       JAVASCRIPT ENGINE (INSTANT REALTIME, PRIVATE DM NOTIF, AUTO-SCROLL)
        ================================================================= -->
   <script>
     const SUPABASE_URL = 'https://kfnevcwlbnsoavlqtacd.supabase.co';
@@ -918,11 +915,18 @@
     }
 
     let topPopupTimer = null;
-    function showTopPopup(title, message, icon = 'fa-circle-check') {
+    function showTopPopup(title, message, icon = 'fa-circle-check', onClickRoute = null) {
       const box = document.getElementById('topCenterPopup');
       document.getElementById('topPopupTitle').textContent = title;
       document.getElementById('topPopupMessage').innerHTML = message;
       document.getElementById('topPopupIcon').className = `fa-solid ${icon}`;
+
+      const clickArea = document.getElementById('topPopupClickArea');
+      clickArea.onclick = () => {
+        closeTopPopup();
+        if (onClickRoute) openNotificationDestination(onClickRoute);
+      };
+
       box.classList.remove('hidden');
       box.classList.add('animate-top-toast');
 
@@ -1160,11 +1164,132 @@
     let currentViewedMemberId = null;
     let currentViewedMaterialId = null;
     let navStack = ['home'];
+    let justOpenedChatRoom = false;
 
     function saveDbLocal() {
       localStorage.setItem('zerava_v4_db', JSON.stringify(db));
     }
 
+    // ---------------- FILTER PRIVASI NOTIFIKASI & NAVIGASI LANGSUNG ----------------
+    // Menyimpan daftar ID notifikasi yang sudah diklik/dihapus oleh user ini
+    function getDismissedNotifIds() {
+      if (!currentUser) return [];
+      return JSON.parse(localStorage.getItem(`zerava_dismissed_notifs_${currentUser.id}`) || '[]');
+    }
+
+    function markNotifDismissedLocal(notifId) {
+      if (!currentUser) return;
+      const list = getDismissedNotifIds();
+      if (!list.includes(notifId)) {
+        list.push(notifId);
+        localStorage.setItem(`zerava_dismissed_notifs_${currentUser.id}`, JSON.stringify(list));
+      }
+    }
+
+    // Mengecek apakah sebuah notifikasi ditujukan untuk currentUser (Mencegah DM bocor ke orang lain!)
+    function isNotificationVisibleForMe(notif) {
+      if (!currentUser || !notif) return false;
+      const dismissed = getDismissedNotifIds();
+      if (dismissed.includes(notif.id)) return false;
+
+      const rawPage = notif.page || '';
+      if (!rawPage.includes('|')) {
+        // Jika format lama berupa 'Chat ke ...', sembunyikan jika bukan untuk kita
+        if (notif.title && notif.title.startsWith('Chat ke ')) return false;
+        return true;
+      }
+
+      const [targetSpec] = rawPage.split('|');
+
+      // 1. Notifikasi DM Pribadi: HANYA tampil untuk penerima DM (targetId)
+      if (targetSpec.startsWith('user:')) {
+        const targetUserId = targetSpec.split(':')[1];
+        return currentUser.id === targetUserId;
+      }
+
+      // 2. Notifikasi Chat Grup: HANYA tampil untuk anggota grup tersebut (kecuali pengirimnya sendiri)
+      if (targetSpec.startsWith('group:')) {
+        const parts = targetSpec.split(':');
+        const groupId = parts[1];
+        const senderId = parts[2];
+        if (senderId && currentUser.id === senderId) return false;
+        const grp = db.groups.find(g => g.id === groupId);
+        if (!grp) return true;
+        return (grp.members || []).includes(currentUser.id);
+      }
+
+      // 3. Notifikasi Umum (Project / Class): tampil untuk semua member
+      return true;
+    }
+
+    function getMyVisibleNotifications() {
+      return db.notifications.filter(n => isNotificationVisibleForMe(n));
+    }
+
+    // Membuka halaman/ruang spesifik saat notifikasi diklik
+    function openNotificationDestination(rawPageStr) {
+      if (!rawPageStr) {
+        navigateTo('home');
+        return;
+      }
+      const routePart = rawPageStr.includes('|') ? rawPageStr.split('|')[1] : rawPageStr;
+
+      if (routePart.startsWith('dm:')) {
+        const partnerId = routePart.split(':')[1];
+        if (partnerId) {
+          openChatRoom('dm', partnerId);
+          return;
+        }
+      }
+
+      if (routePart.startsWith('group:')) {
+        const groupId = routePart.split(':')[1];
+        if (groupId) {
+          openChatRoom('group', groupId);
+          return;
+        }
+      }
+
+      if (routePart.startsWith('project:')) {
+        const parts = routePart.split(':');
+        const projId = parts[1];
+        const subFeat = parts[2] || 'ide';
+        if (projId && db.projects.some(p => p.id === projId)) {
+          currentProjectId = projId;
+          currentSubFeature = subFeat;
+          navigateTo('project-detail');
+          return;
+        }
+        navigateTo('production');
+        return;
+      }
+
+      if (routePart.startsWith('class:')) {
+        const matId = routePart.split(':')[1];
+        if (matId && db.classMaterials.some(m => m.id === matId)) {
+          openMaterialDetailPage(matId);
+          return;
+        }
+        navigateTo('class');
+        return;
+      }
+
+      navigateTo(routePart || 'home');
+    }
+
+    // Saat item notifikasi di halaman Notifikasi diklik: Langsung hapus & menuju halaman tujuan!
+    async function handleNotificationItemClick(notifId) {
+      const notif = db.notifications.find(n => n.id === notifId);
+      const targetRoute = notif ? notif.page : 'home';
+
+      // Hapus langsung tanpa pop-up
+      await deleteSingleNotification(notifId);
+
+      // Menuju halaman yang disebutkan
+      openNotificationDestination(targetRoute);
+    }
+
+    // ---------------- PENCATATAN UNREAD CHAT ----------------
     function getLastReadMap() {
       if (!currentUser) return {};
       return JSON.parse(localStorage.getItem(`zerava_read_${currentUser.id}`) || '{}');
@@ -1173,7 +1298,7 @@
     function markRoomAsRead(roomKey) {
       if (!currentUser) return;
       const map = getLastReadMap();
-      map[roomKey] = Date.now();
+      map[roomKey] = Date.now() + 5000;
       localStorage.setItem(`zerava_read_${currentUser.id}`, JSON.stringify(map));
       updateGlobalBadges();
     }
@@ -1197,7 +1322,11 @@
     function getTotalUnreadChatCount() {
       if (!currentUser) return 0;
       let total = 0;
-      db.groups.forEach(g => { total += getRoomUnreadCount(g.id); });
+      db.groups.forEach(g => {
+        if ((g.members || []).includes(currentUser.id)) {
+          total += getRoomUnreadCount(g.id);
+        }
+      });
       db.users.filter(u => u.id !== currentUser.id).forEach(u => {
         total += getRoomUnreadCount(getDmRoomKey(currentUser.id, u.id));
       });
@@ -1207,7 +1336,7 @@
     function updateGlobalBadges() {
       const topBadge = document.getElementById('topNotifBadge');
       if (topBadge) {
-        const nCount = db.notifications.length;
+        const nCount = getMyVisibleNotifications().length;
         topBadge.textContent = nCount > 99 ? '99+' : nCount;
         if (nCount > 0) {
           topBadge.classList.remove('hidden');
@@ -1232,15 +1361,18 @@
       }
     }
 
-    async function createAndBroadcastNotification(type, title, body, page = 'home') {
+    // Pembuatan Notifikasi dengan Target Privasi & Spesifik Route
+    async function createAndBroadcastNotification(type, title, body, encodedPageRoute = 'all|home', targetUserIds = null) {
       const newNotif = {
-        id: 'n_' + Date.now() + '_' + Math.floor(Math.random() * 100),
+        id: 'n_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
         type,
         title,
         body,
         time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-        page
+        page: encodedPageRoute
       };
+
+      knownNotifIds.add(newNotif.id);
       db.notifications.unshift(newNotif);
       saveDbLocal();
       updateGlobalBadges();
@@ -1253,7 +1385,7 @@
         } catch (e) {}
       }
 
-      // Kirim sinyal Background Web Push ke semua HP member yang sedang menutup aplikasi
+      // Kirim sinyal Background Web Push HANYA ke targetUserIds yang berhak menerima!
       try {
         fetch('/api/send-push', {
           method: 'POST',
@@ -1261,19 +1393,96 @@
           body: JSON.stringify({
             title,
             body,
-            page,
-            senderId: currentUser ? currentUser.id : ''
+            page: encodedPageRoute,
+            senderId: currentUser ? currentUser.id : '',
+            targetUserIds
           })
         });
       } catch (e) {}
     }
 
+    // ---------------- REALTIME INSTAN + FAST SYNC ANTI-DELAY ----------------
     let knownMsgIds = new Set();
     let knownNotifIds = new Set();
     let isSyncing = false;
+    let pendingSyncRequest = false;
+
+    function getActiveChatRoomKey() {
+      if (activePageId !== 'chat-room' || !currentUser) return null;
+      return currentRoom.type === 'group' ? currentRoom.id : getDmRoomKey(currentUser.id, currentRoom.id);
+    }
+
+    function isIncomingMessageForMe(roomId, senderId) {
+      if (!currentUser || senderId === currentUser.id) return false;
+      if (roomId.startsWith('dm_')) {
+        const parts = roomId.split('_');
+        return parts.includes(currentUser.id);
+      }
+      const grp = db.groups.find(g => g.id === roomId);
+      return grp ? (grp.members || []).includes(currentUser.id) : true;
+    }
+
+    // Fungsi Fast-Sync Khusus Chat & Notifikasi (Berjalan setiap 2.5 detik agar tidak pernah delay)
+    async function fastSyncChatAndNotifs() {
+      if (!sb || !currentUser) return;
+      try {
+        const [mRes, notifRes] = await Promise.all([
+          sb.from('zerava_messages').select('*').order('created_at', { ascending: true }),
+          sb.from('zerava_notifications').select('*').order('created_at', { ascending: false }).limit(60)
+        ]);
+
+        let hasNewChat = false;
+        if (mRes.data) {
+          mRes.data.forEach(r => {
+            if (!knownMsgIds.has(r.id)) {
+              knownMsgIds.add(r.id);
+              hasNewChat = true;
+              if (isIncomingMessageForMe(r.room_id, r.sender_id)) {
+                const sName = getMemberDisplayName(r.sender_id);
+                const routeStr = r.room_id.startsWith('dm_') ? `dm:${r.sender_id}` : `group:${r.room_id}`;
+                if (getActiveChatRoomKey() !== r.room_id) {
+                  showTopPopup(`Pesan Baru • ${sName}`, r.text, 'fa-comment-dots', routeStr);
+                  fireSystemNotification(`Pesan Baru dari ${sName}`, r.text, routeStr);
+                }
+              }
+            }
+          });
+
+          if (hasNewChat || mRes.data.length !== db.messages.length) {
+            db.messages = mRes.data.map(r => ({
+              id: r.id, roomId: r.room_id, senderId: r.sender_id, text: r.text, time: r.time, createdAt: r.created_at, replyTo: r.reply_to
+            }));
+            saveDbLocal();
+            updateGlobalBadges();
+            if (activePageId === 'chat-room') renderChatRoomPage(true);
+            else if (activePageId === 'chat') renderChatListPage(true);
+          }
+        }
+
+        if (notifRes.data) {
+          let notifChanged = notifRes.data.length !== db.notifications.length;
+          notifRes.data.forEach(n => {
+            if (!knownNotifIds.has(n.id)) {
+              knownNotifIds.add(n.id);
+              notifChanged = true;
+            }
+          });
+          if (notifChanged) {
+            db.notifications = notifRes.data;
+            saveDbLocal();
+            updateGlobalBadges();
+            if (activePageId === 'notifications') renderNotificationsPage();
+          }
+        }
+      } catch (e) {}
+    }
 
     async function syncFromSupabase(triggerPushForNew = false) {
-      if (!sb || isSyncing) return;
+      if (!sb) return;
+      if (isSyncing) {
+        pendingSyncRequest = true;
+        return;
+      }
       isSyncing = true;
       try {
         const [uRes, nRes, gRes, mRes, pRes, cRes, notifRes, invRes] = await Promise.all([
@@ -1283,7 +1492,7 @@
           sb.from('zerava_messages').select('*').order('created_at', { ascending: true }),
           sb.from('zerava_projects').select('*').order('created_at', { ascending: false }),
           sb.from('zerava_class').select('*').order('created_at', { ascending: false }),
-          sb.from('zerava_notifications').select('*').order('created_at', { ascending: false }).limit(50),
+          sb.from('zerava_notifications').select('*').order('created_at', { ascending: false }).limit(60),
           sb.from('zerava_invites').select('*').order('created_at', { ascending: false })
         ]);
 
@@ -1308,10 +1517,13 @@
         if (mRes.data && mRes.data.length > 0) {
           mRes.data.forEach(r => {
             if (triggerPushForNew && knownMsgIds.size > 0 && !knownMsgIds.has(r.id)) {
-              if (currentUser && r.sender_id !== currentUser.id) {
+              if (isIncomingMessageForMe(r.room_id, r.sender_id)) {
                 const sName = getMemberDisplayName(r.sender_id);
-                fireSystemNotification(`Pesan Baru dari ${sName}`, r.text, 'chat');
-                showTopPopup(`Pesan Baru • ${sName}`, r.text, 'fa-comment-dots');
+                const routeStr = r.room_id.startsWith('dm_') ? `dm:${r.sender_id}` : `group:${r.room_id}`;
+                if (getActiveChatRoomKey() !== r.room_id) {
+                  fireSystemNotification(`Pesan Baru dari ${sName}`, r.text, routeStr);
+                  showTopPopup(`Pesan Baru • ${sName}`, r.text, 'fa-comment-dots', routeStr);
+                }
               }
             }
             knownMsgIds.add(r.id);
@@ -1338,12 +1550,7 @@
         }
 
         if (notifRes.data) {
-          notifRes.data.forEach(n => {
-            if (triggerPushForNew && knownNotifIds.size > 0 && !knownNotifIds.has(n.id)) {
-              fireSystemNotification(n.title, n.body, n.page || 'notifications');
-            }
-            knownNotifIds.add(n.id);
-          });
+          notifRes.data.forEach(n => knownNotifIds.add(n.id));
           db.notifications = notifRes.data;
         }
 
@@ -1354,21 +1561,76 @@
         refreshCurrentView();
       } catch (e) {}
       isSyncing = false;
+      if (pendingSyncRequest) {
+        pendingSyncRequest = false;
+        syncFromSupabase(true);
+      }
     }
 
     function setupRealtimeListeners() {
       if (!sb) return;
-      sb.channel('zerava-live-v6')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'zerava_messages' }, () => syncFromSupabase(true))
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'zerava_notifications' }, () => syncFromSupabase(true))
+      sb.channel('zerava-instant-v7')
+        // Tangkap pesan chat baru secara instan dari payload tanpa menunggu fetch tabel lain!
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'zerava_messages' }, (payload) => {
+          const r = payload.new;
+          if (!r) return;
+          if (!db.messages.some(m => m.id === r.id)) {
+            knownMsgIds.add(r.id);
+            db.messages.push({
+              id: r.id, roomId: r.room_id, senderId: r.sender_id, text: r.text, time: r.time, createdAt: r.created_at, replyTo: r.reply_to
+            });
+            saveDbLocal();
+            updateGlobalBadges();
+            if (activePageId === 'chat-room') renderChatRoomPage(true);
+            else if (activePageId === 'chat') renderChatListPage(true);
+
+            if (isIncomingMessageForMe(r.room_id, r.sender_id)) {
+              const sName = getMemberDisplayName(r.sender_id);
+              const routeStr = r.room_id.startsWith('dm_') ? `dm:${r.sender_id}` : `group:${r.room_id}`;
+              if (getActiveChatRoomKey() !== r.room_id) {
+                showTopPopup(`Pesan Baru • ${sName}`, r.text, 'fa-comment-dots', routeStr);
+                fireSystemNotification(`Pesan Baru dari ${sName}`, r.text, routeStr);
+              }
+            }
+          }
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'zerava_messages' }, (payload) => {
+          const oldId = payload.old?.id;
+          if (oldId) {
+            db.messages = db.messages.filter(m => m.id !== oldId);
+            saveDbLocal();
+            if (activePageId === 'chat-room') renderChatRoomPage();
+            else if (activePageId === 'chat') renderChatListPage(true);
+          }
+        })
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'zerava_notifications' }, (payload) => {
+          const n = payload.new;
+          if (n && !db.notifications.some(x => x.id === n.id)) {
+            knownNotifIds.add(n.id);
+            db.notifications.unshift(n);
+            saveDbLocal();
+            updateGlobalBadges();
+            if (activePageId === 'notifications') renderNotificationsPage();
+          }
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'zerava_notifications' }, (payload) => {
+          const oldId = payload.old?.id;
+          if (oldId) {
+            db.notifications = db.notifications.filter(x => x.id !== oldId);
+            saveDbLocal();
+            updateGlobalBadges();
+            if (activePageId === 'notifications') renderNotificationsPage();
+          }
+        })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'zerava_projects' }, () => syncFromSupabase(false))
         .on('postgres_changes', { event: '*', schema: 'public', table: 'zerava_class' }, () => syncFromSupabase(false))
         .on('postgres_changes', { event: '*', schema: 'public', table: 'zerava_groups' }, () => syncFromSupabase(false))
         .subscribe();
 
+      // Fast-Sync ringan setiap 2.5 detik agar chat masuk seketika tanpa perlu refresh manual
       setInterval(() => {
-        if (currentUser) syncFromSupabase(true);
-      }, 20000);
+        if (currentUser) fastSyncChatAndNotifs();
+      }, 2500);
     }
 
     function refreshCurrentView() {
@@ -1462,9 +1724,19 @@
         window.history.pushState({ pageId }, '', `#${pageId}`);
       }
 
+      // PENTING: Tampilkan elemen halaman terlebih dahulu SEBELUM renderChatRoomPage agar scrollHeight terbaca akurat!
+      if (target) {
+        target.classList.remove('hidden');
+        if (pageId !== 'chat-room') {
+          requestAnimationFrame(() => {
+            target.classList.add('animate-page');
+          });
+        }
+      }
+
       if (pageId === 'home') renderHomePage();
-      else if (pageId === 'chat') renderChatListPage();
-      else if (pageId === 'chat-room') renderChatRoomPage();
+      else if (pageId === 'chat') renderChatListPage(true);
+      else if (pageId === 'chat-room') renderChatRoomPage(true);
       else if (pageId === 'create-group') renderCreateGroupPage();
       else if (pageId === 'group-info') renderGroupInfoPage();
       else if (pageId === 'member-profile') renderMemberProfilePage();
@@ -1475,15 +1747,6 @@
       else if (pageId === 'notifications') renderNotificationsPage();
       else if (pageId === 'profile') renderMyProfilePage();
       else if (pageId === 'admin') renderAdminPage();
-
-      if (target) {
-        target.classList.remove('hidden');
-        if (pageId !== 'chat-room') {
-          requestAnimationFrame(() => {
-            target.classList.add('animate-page');
-          });
-        }
-      }
 
       updateGlobalBadges();
       if (pageId !== 'chat-room') window.scrollTo({ top: 0, behavior: 'instant' });
@@ -1594,6 +1857,13 @@
 
       await syncFromSupabase(false);
       setupRealtimeListeners();
+
+      // Jika dibuka dari klik Push Notification di luar aplikasi, langsung arahkan ke tujuannya
+      if (params.get('notif_route') && currentUser) {
+        const route = params.get('notif_route');
+        window.history.replaceState({}, document.title, window.location.pathname);
+        openNotificationDestination(route);
+      }
     });
 
     async function handleLogin(e) {
@@ -1778,15 +2048,30 @@
       setHtmlIfChanged('chatDirectoryList', html, force);
     }
 
+    // Pastikan setiap kali ruang chat dibuka, otomatis scroll ke paling bawah (chat terbaru)!
+    function scrollToBottomChat() {
+      const box = document.getElementById('chatRoomMessages');
+      if (!box) return;
+      box.scrollTop = box.scrollHeight;
+      requestAnimationFrame(() => {
+        box.scrollTop = box.scrollHeight;
+        setTimeout(() => {
+          box.scrollTop = box.scrollHeight;
+        }, 50);
+      });
+    }
+
     function openChatRoom(type, id) {
       currentRoom = { type, id };
+      justOpenedChatRoom = true;
       const rKey = type === 'group' ? id : getDmRoomKey(currentUser.id, id);
       markRoomAsRead(rKey);
       clearChatReply();
       navigateTo('chat-room');
+      scrollToBottomChat();
     }
 
-    function renderChatRoomPage() {
+    function renderChatRoomPage(forceScrollBottom = false) {
       const box = document.getElementById('chatRoomMessages');
       let roomKey = '';
       let headerHtml = '';
@@ -1813,7 +2098,7 @@
           </div>
         `;
       } else {
-        const u = db.users.find(x => x.id === currentRoom.id);
+        const u = db.users.find(x => x.id === currentRoom.id) || db.users[0];
         roomKey = getDmRoomKey(currentUser.id, u.id);
         markRoomAsRead(roomKey);
         headerHtml = `
@@ -1869,10 +2154,15 @@
         `;
       }).join('') || `<div class="text-center text-xs text-slate-400 py-12">Belum ada obrolan. Kirim pesan pertama!</div>`;
 
-      if (domRenderCache['chatRoomMessages'] !== msgsHtml) {
+      const contentChanged = domRenderCache['chatRoomMessages'] !== msgsHtml;
+      if (contentChanged) {
         domRenderCache['chatRoomMessages'] = msgsHtml;
         box.innerHTML = msgsHtml;
-        box.scrollTop = box.scrollHeight;
+      }
+
+      if (contentChanged || forceScrollBottom || justOpenedChatRoom) {
+        justOpenedChatRoom = false;
+        scrollToBottomChat();
       }
     }
 
@@ -1881,7 +2171,7 @@
         db.messages = db.messages.filter(m => m.id !== msgId);
         saveDbLocal();
         if (sb) await sb.from('zerava_messages').delete().eq('id', msgId);
-        renderChatRoomPage();
+        renderChatRoomPage(false);
         showTopPopup('Pesan Dihapus', 'Pesan berhasil dihapus dari obrolan.', 'fa-trash-can');
       });
     }
@@ -1913,7 +2203,7 @@
       const nowIso = new Date().toISOString();
       const time = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
       const msgObj = {
-        id: 'm_' + Date.now(),
+        id: 'm_' + Date.now() + '_' + Math.floor(Math.random() * 100),
         roomId: roomKey,
         senderId: currentUser.id,
         text,
@@ -1928,7 +2218,7 @@
       inp.value = '';
       clearChatReply();
       saveDbLocal();
-      renderChatRoomPage();
+      renderChatRoomPage(true);
 
       if (sb) {
         await sb.from('zerava_messages').insert([{
@@ -1936,15 +2226,28 @@
         }]);
       }
 
-      let roomTitle = '';
+      // PRIVASI NOTIFIKASI DM VS GRUP:
       if (currentRoom.type === 'group') {
         const g = db.groups.find(x => x.id === currentRoom.id);
-        roomTitle = `Pesan Grup ${g ? g.name : ''}`;
+        const groupMembers = g ? (g.members || []).filter(id => id !== currentUser.id) : null;
+        await createAndBroadcastNotification(
+          'chat',
+          `Grup: ${g ? g.name : 'Zerava'}`,
+          `${currentUser.name}: ${text}`,
+          `group:${currentRoom.id}:${currentUser.id}|group:${currentRoom.id}`,
+          groupMembers
+        );
       } else {
-        const u = db.users.find(x => x.id === currentRoom.id);
-        roomTitle = `Chat ke ${u ? u.name : 'Member'}`;
+        // DM PRIBADI: Hanya dikirim ke ID penerima (currentRoom.id), TIDAK ke member lain!
+        const recipientId = currentRoom.id;
+        await createAndBroadcastNotification(
+          'chat',
+          `Pesan DM dari ${currentUser.name}`,
+          text,
+          `user:${recipientId}|dm:${currentUser.id}`,
+          [recipientId]
+        );
       }
-      await createAndBroadcastNotification('chat', `${roomTitle}`, `${currentUser.name}: ${text}`, 'chat');
     }
 
     function openMemberProfilePage(userId) {
@@ -2045,7 +2348,13 @@
       saveDbLocal();
       if (sb) await sb.from('zerava_groups').upsert([newGrp]);
 
-      await createAndBroadcastNotification('chat', 'Grup Baru Dibuat', `${currentUser.name} membuat grup "${name}"`, 'chat');
+      await createAndBroadcastNotification(
+        'chat',
+        'Grup Baru Dibuat',
+        `${currentUser.name} menambahkanmu ke grup "${name}"`,
+        `group:${newGrp.id}:${currentUser.id}|group:${newGrp.id}`,
+        members.filter(id => id !== currentUser.id)
+      );
       openChatRoom('group', newGrp.id);
       showTopPopup('Grup Berhasil Dibuat', `Grup <b>${name}</b> telah siap digunakan.`);
     }
@@ -2207,7 +2516,12 @@
         }]);
       }
 
-      await createAndBroadcastNotification('production', 'Project Film Baru!', `${currentUser.name} membuat project "${newProj.title}"`, 'production');
+      await createAndBroadcastNotification(
+        'production',
+        `Project Film Baru: ${newProj.title}`,
+        `${currentUser.name} menambahkan project "${newProj.title}"`,
+        `all|project:${newProj.id}:ide`
+      );
       openProjectDetailPage(newProj.id);
       showTopPopup('Project Ditambahkan', `Project <b>${newProj.title}</b> berhasil disimpan.`);
     }
@@ -2486,9 +2800,14 @@
       });
       saveDbLocal();
       await saveProjectToSupabase(p);
-      await createAndBroadcastNotification('production', `Ide Baru di ${p.title}`, `${currentUser.name} mengusulkan ide "${title}"`, 'production');
+      await createAndBroadcastNotification(
+        'production',
+        `Ide Baru di ${p.title}`,
+        `${currentUser.name} mengusulkan ide "${title}"`,
+        `all|project:${p.id}:ide`
+      );
       goBack();
-      showTopPopup('Ide Berhasil Disimpan', 'Ide ceritamu sudah tampil dan tercatat di Notifikasi.');
+      showTopPopup('Ide Berhasil Disimpan', 'Ide ceritamu sudah tampil di Project.');
     }
 
     async function handleSaveProjectFile(e, featKey) {
@@ -2520,7 +2839,12 @@
 
       saveDbLocal();
       await saveProjectToSupabase(p);
-      await createAndBroadcastNotification('production', `Update ${featKey.toUpperCase()} Project`, `${currentUser.name} meng-upload "${name}" di ${p.title}`, 'production');
+      await createAndBroadcastNotification(
+        'production',
+        `Update ${featKey.toUpperCase()} — ${p.title}`,
+        `${currentUser.name} meng-upload "${name}"`,
+        `all|project:${p.id}:${featKey}`
+      );
       goBack();
       showTopPopup('Berhasil Di-upload', `Dokumen <b>${name}</b> telah tersimpan.`);
     }
@@ -2664,13 +2988,17 @@
         }]);
       }
 
-      await createAndBroadcastNotification('class', 'Materi Baru di Zerava Class!', `${currentUser.name} membagikan materi "${newMat.title}"`, 'class');
-      fireSystemNotification('Materi Baru di Zerava Class!', `${currentUser.name} membagikan "${newMat.title}"`, 'class');
+      await createAndBroadcastNotification(
+        'class',
+        `Materi Baru: ${newMat.title}`,
+        `${currentUser.name} membagikan materi di Zerava Class`,
+        `all|class:${newMat.id}`
+      );
       openMaterialDetailPage(newMat.id);
-      showTopPopup('Materi Berhasil Di-upload', `Materi <b>${newMat.title}</b> sudah tampil di Zerava Class & Notifikasi.`);
+      showTopPopup('Materi Berhasil Di-upload', `Materi <b>${newMat.title}</b> sudah tampil di Zerava Class.`);
     }
 
-    // 5. NOTIFIKASI LUAR WEB (BACKGROUND WEB PUSH & NADA DERING ASLI HP)
+    // 5. NOTIFIKASI LUAR WEB & HALAMAN NOTIFIKASI
     let swRegistration = null;
 
     function urlBase64ToUint8Array(base64String) {
@@ -2716,8 +3044,7 @@
       } catch (e) {}
     }
 
-    // Tanpa suara sintetis kode — Murni memicu notifikasi & nada dering bawaan HP masing-masing
-    async function fireSystemNotification(title, body, targetPage = 'notifications') {
+    async function fireSystemNotification(title, body, targetRoute = 'notifications') {
       if (!('Notification' in window) || Notification.permission !== 'granted') return;
       const options = {
         body,
@@ -2727,7 +3054,7 @@
         vibrate: [200, 100, 200],
         tag: 'zerava-notif-' + Date.now(),
         renotify: true,
-        data: { page: targetPage }
+        data: { page: targetRoute }
       };
       try {
         const reg = swRegistration || (await navigator.serviceWorker.getRegistration());
@@ -2767,15 +3094,16 @@
               body: JSON.stringify({
                 title: 'Zerava Filmboard • Pesan Masuk',
                 body: `Halo ${currentUser.name}, notifikasi latar belakang & nada dering HP aslimu sudah aktif!`,
-                page: 'notifications',
-                senderId: 'TEST'
+                page: `user:${currentUser.id}|home`,
+                senderId: 'TEST',
+                targetUserIds: [currentUser.id]
               })
             });
           } catch (e) {
             await fireSystemNotification(
               'Zerava Filmboard • Pesan Masuk',
               `Halo ${currentUser.name}, notifikasi dengan nada dering HP aslimu sudah aktif!`,
-              'notifications'
+              'home'
             );
           }
         }, 4000);
@@ -2789,13 +3117,15 @@
       if ('Notification' in window) {
         const p = Notification.permission;
         sub.innerHTML = p === 'granted'
-          ? '<span class="text-emerald-500 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>Izin Notifikasi Aktif (Berjalan di latar belakang & memakai nada dering HP)</span>'
+          ? '<span class="text-emerald-500 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>Notifikasi Aktif • Ketuk item di bawah untuk membuka & menghapusnya otomatis</span>'
           : '<span class="text-amber-500 font-bold">Klik tombol "Aktifkan & Tes Notif Luar Web" di samping</span>';
       }
 
-      const html = db.notifications.map(n => `
-        <div class="p-4 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-white/5">
-          <div onclick="navigateTo('${n.page || 'chat'}')" class="flex items-center gap-3.5 flex-1 min-w-0 cursor-pointer">
+      const myNotifs = getMyVisibleNotifications();
+
+      const html = myNotifs.map(n => `
+        <div class="p-4 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-white/5 transition">
+          <div onclick="handleNotificationItemClick('${n.id}')" class="flex items-center gap-3.5 flex-1 min-w-0 cursor-pointer">
             <div class="w-10 h-10 rounded-2xl bg-zteal/15 dark:bg-zbeige/20 text-zteal dark:text-zbeige flex items-center justify-center shrink-0">
               <i class="fa-solid ${n.type === 'class' ? 'fa-graduation-cap' : n.type === 'production' ? 'fa-clapperboard' : 'fa-comment-dots'}"></i>
             </div>
@@ -2806,34 +3136,38 @@
           </div>
           <div class="flex items-center gap-2 shrink-0">
             <span class="text-[10px] text-slate-400">${n.time || ''}</span>
-            <button onclick="deleteSingleNotification('${n.id}')" class="w-7 h-7 rounded-lg text-slate-400 hover:text-red-500 flex items-center justify-center">
+            <button onclick="deleteSingleNotification('${n.id}')" title="Hapus" class="w-7 h-7 rounded-lg text-slate-400 hover:text-red-500 flex items-center justify-center">
               <i class="fa-solid fa-xmark text-xs"></i>
             </button>
           </div>
         </div>
-      `).join('') || '<div class="p-8 text-center text-xs text-slate-400">Belum ada riwayat notifikasi.</div>';
+      `).join('') || '<div class="p-8 text-center text-xs text-slate-400">Belum ada notifikasi baru untukmu.</div>';
 
-      setHtmlIfChanged('notifItemsContainer', html);
+      setHtmlIfChanged('notifItemsContainer', html, true);
     }
 
+    // Hapus 1 notifikasi secara langsung TANPA pop-up pemberitahuan
     async function deleteSingleNotification(notifId) {
+      const targetNotif = db.notifications.find(n => n.id === notifId);
+      markNotifDismissedLocal(notifId);
       db.notifications = db.notifications.filter(n => n.id !== notifId);
       saveDbLocal();
       updateGlobalBadges();
-      renderNotificationsPage();
-      if (sb) await sb.from('zerava_notifications').delete().eq('id', notifId);
+      if (activePageId === 'notifications') renderNotificationsPage();
+
+      // Jika notifikasi DM pribadi, hapus juga dari tabel Supabase
+      if (sb && targetNotif && (targetNotif.page || '').startsWith('user:')) {
+        try { await sb.from('zerava_notifications').delete().eq('id', notifId); } catch (e) {}
+      }
     }
 
+    // Bersihkan semua notifikasi TANPA memunculkan pop-up "Notifikasi Dibersihkan"
     function confirmClearAllNotifications() {
-      if (db.notifications.length === 0) return;
-      openConfirmDialog('Bersihkan Semua Notifikasi?', 'Seluruh daftar riwayat notifikasi akan dikosongkan.', async () => {
-        db.notifications = [];
-        saveDbLocal();
-        updateGlobalBadges();
-        renderNotificationsPage();
-        if (sb) await sb.from('zerava_notifications').delete().neq('id', '0');
-        showTopPopup('Notifikasi Dibersihkan', 'Daftar notifikasi telah dikosongkan.');
-      });
+      const myNotifs = getMyVisibleNotifications();
+      if (myNotifs.length === 0) return;
+      myNotifs.forEach(n => markNotifDismissedLocal(n.id));
+      updateGlobalBadges();
+      renderNotificationsPage();
     }
 
     // 6. MY PROFIL & ADMIN
