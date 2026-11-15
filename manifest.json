@@ -1,0 +1,15 @@
+{
+  "name": "Zerava Filmboard",
+  "short_name": "Zerava",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#11110F",
+  "theme_color": "#11110F",
+  "icons": [
+    {
+      "src": "Zerava (putih).png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
