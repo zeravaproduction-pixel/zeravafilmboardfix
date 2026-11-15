@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Zerava Filmboard — Zerava Studio</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#11110F" />
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
@@ -38,6 +40,7 @@
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
       -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
     }
     html.dark body {
       background-color: #11110F;
@@ -49,53 +52,122 @@
     }
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-thumb { background: rgba(150, 150, 150, 0.35); border-radius: 9999px; }
+
+    /* ANIMASI MODERN & HALUS (REVISI #10) */
+    @keyframes pageFadeSlide {
+      0% { opacity: 0; transform: translateY(14px) scale(0.99); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .animate-page {
+      animation: pageFadeSlide 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes topToastDrop {
+      0% { opacity: 0; transform: translate(-50%, -28px) scale(0.92); }
+      100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    }
+    .animate-top-toast {
+      animation: topToastDrop 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes bubblePop {
+      0% { opacity: 0; transform: translateY(8px) scale(0.96); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .animate-bubble {
+      animation: bubblePop 0.2s ease-out forwards;
+    }
+
+    @keyframes heartPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.28); }
+    }
+    .animate-heart:active {
+      animation: heartPulse 0.3s ease-in-out;
+    }
+
+    .btn-interactive {
+      transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    }
+    .btn-interactive:active {
+      transform: scale(0.95);
+    }
+    .card-interactive {
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.22s ease;
+    }
+    .card-interactive:hover {
+      transform: translateY(-2px);
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col select-none">
 
   <!-- =================================================================
-       CENTERED POP-UP MODAL (DI TENGAH LAYAR)
+       1. TOP-CENTER NOTIFICATION POP-UP (DI TENGAH ATAS LAYAR - REVISI #7)
        ================================================================= -->
-  <div id="centerPopupOverlay" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-5">
-    <div class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl transform transition-all space-y-4">
-      <div class="w-14 h-14 rounded-full mx-auto flex items-center justify-center text-2xl bg-zbeige/20 text-zteal dark:text-zbeige">
-        <i id="centerPopupIcon" class="fa-solid fa-circle-check"></i>
+  <div id="topCenterPopup" class="fixed top-4 left-1/2 -translate-x-1/2 z-[130] hidden w-[92%] max-w-md pointer-events-auto">
+    <div class="bg-white/95 dark:bg-zcard/95 backdrop-blur-md border-2 border-zteal/40 dark:border-zbeige/50 rounded-2xl p-4 shadow-2xl flex items-start gap-3.5">
+      <div class="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center text-lg bg-zteal/15 dark:bg-zbeige/20 text-zteal dark:text-zbeige">
+        <i id="topPopupIcon" class="fa-solid fa-bell"></i>
       </div>
-      <div class="space-y-1.5">
-        <h3 id="centerPopupTitle" class="text-base font-extrabold text-slate-900 dark:text-white">Informasi</h3>
-        <p id="centerPopupMessage" class="text-xs text-slate-600 dark:text-gray-300 leading-relaxed">Pesan di tengah layar.</p>
+      <div class="flex-1 min-w-0">
+        <h4 id="topPopupTitle" class="text-xs font-extrabold text-slate-900 dark:text-white truncate">Notifikasi</h4>
+        <p id="topPopupMessage" class="text-[11px] text-slate-600 dark:text-gray-300 leading-relaxed mt-0.5">Pesan notifikasi.</p>
       </div>
-      <button onclick="closeCenterPopup()" class="w-full py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-bold text-xs shadow-md hover:opacity-95 transition">
-        Mengerti
+      <button onclick="closeTopPopup()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white px-1">
+        <i class="fa-solid fa-xmark text-sm"></i>
       </button>
     </div>
   </div>
 
   <!-- =================================================================
-       INDIKATOR UPLOAD / LOADING DI TENGAH LAYAR
+       2. DIALOG KONFIRMASI (UNTUK LOGOUT & HAPUS ITEM - REVISI #5 & #6)
        ================================================================= -->
-  <div id="loadingOverlay" class="fixed inset-0 z-[110] hidden items-center justify-center bg-black/70 backdrop-blur-sm p-5">
-    <div class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl p-6 flex flex-col items-center gap-3 shadow-2xl">
-      <i class="fa-solid fa-circle-notch fa-spin text-3xl text-zteal dark:text-zbeige"></i>
-      <p id="loadingText" class="text-xs font-extrabold text-slate-900 dark:text-white">Menyimpan ke Cloud...</p>
+  <div id="confirmDialogOverlay" class="fixed inset-0 z-[140] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-5">
+    <div class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl space-y-4 animate-page">
+      <div class="w-14 h-14 rounded-full mx-auto flex items-center justify-center text-2xl bg-red-500/15 text-red-500">
+        <i id="confirmDialogIcon" class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div class="space-y-1.5">
+        <h3 id="confirmDialogTitle" class="text-base font-extrabold text-slate-900 dark:text-white">Konfirmasi Tindakan</h3>
+        <p id="confirmDialogMessage" class="text-xs text-slate-600 dark:text-gray-300 leading-relaxed">Apakah kamu yakin ingin melanjutkan?</p>
+      </div>
+      <div class="grid grid-cols-2 gap-2.5 pt-2">
+        <button onclick="closeConfirmDialog()" class="btn-interactive py-3 rounded-2xl bg-slate-100 dark:bg-zdark border border-slate-200 dark:border-zborder text-slate-700 dark:text-gray-300 font-extrabold text-xs">
+          Batal
+        </button>
+        <button id="confirmDialogYesBtn" class="btn-interactive py-3 rounded-2xl bg-red-500 text-white font-extrabold text-xs shadow-lg hover:bg-red-600">
+          Ya, Lanjutkan
+        </button>
+      </div>
     </div>
   </div>
 
   <!-- =================================================================
-       VIEW 1: LOGIN SCREEN
+       3. LOADING OVERLAY
+       ================================================================= -->
+  <div id="loadingOverlay" class="fixed inset-0 z-[150] hidden items-center justify-center bg-black/70 backdrop-blur-sm p-5">
+    <div class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl p-6 flex flex-col items-center gap-3 shadow-2xl">
+      <i class="fa-solid fa-circle-notch fa-spin text-3xl text-zteal dark:text-zbeige"></i>
+      <p id="loadingText" class="text-xs font-extrabold text-slate-900 dark:text-white">Memproses...</p>
+    </div>
+  </div>
+
+  <!-- =================================================================
+       VIEW 1: LOGIN SCREEN (DENGAN IKON MATA & RIWAYAT LOGIN PRIBADI)
        ================================================================= -->
   <section id="loginView" class="min-h-screen flex items-center justify-center p-5">
-    <div class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl max-w-md w-full p-7 shadow-2xl space-y-6">
+    <div class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl max-w-md w-full p-7 shadow-2xl space-y-6 animate-page">
       <div class="flex items-center justify-between">
         <div class="zerava-logo-slot"></div>
-        <button onclick="toggleTheme()" class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-zdark border border-slate-200 dark:border-zborder flex items-center justify-center text-slate-700 dark:text-zbeige text-sm">
+        <button onclick="toggleTheme()" class="btn-interactive w-9 h-9 rounded-xl bg-slate-100 dark:bg-zdark border border-slate-200 dark:border-zborder flex items-center justify-center text-slate-700 dark:text-zbeige text-sm">
           <i class="fa-solid fa-circle-half-stroke"></i>
         </button>
       </div>
 
       <div>
         <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 text-[10px] font-bold mb-2">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Cloud Online Aktif
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Zerava Cloud Online
         </div>
         <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Wellcome to Zerava FilmBoard</h2>
         <p class="text-xs text-slate-500 dark:text-gray-400 mt-0.5">Sign In menggunakan Email resmi Member Zerava</p>
@@ -106,45 +178,36 @@
           <label class="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">Email atau Nama Member</label>
           <div class="relative">
             <i class="fa-regular fa-envelope absolute left-3.5 top-3 text-slate-400 text-sm"></i>
-            <input id="loginIdentifier" type="text" required placeholder="Contoh: zeravaproduction@gmail.com"
+            <input id="loginIdentifier" type="text" required placeholder="Masukkan email terdaftar"
               class="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white focus:outline-none focus:border-zteal dark:focus:border-zbeige" />
           </div>
         </div>
 
+        <!-- Kolom Password dengan Tombol Lihat Password / Ikon Mata (REVISI #8) -->
         <div>
           <label class="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">Password</label>
           <div class="relative">
             <i class="fa-solid fa-lock absolute left-3.5 top-3 text-slate-400 text-sm"></i>
-            <input id="loginPassword" type="password" required placeholder="Masukkan password (default: 123456)"
-              class="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white focus:outline-none focus:border-zteal dark:focus:border-zbeige" />
+            <input id="loginPassword" type="password" required placeholder="Masukkan password"
+              class="w-full pl-10 pr-11 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white focus:outline-none focus:border-zteal dark:focus:border-zbeige" />
+            <button type="button" onclick="togglePasswordVisibility('loginPassword', 'loginPassEyeIcon')"
+              class="absolute right-3 top-2.5 w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white">
+              <i id="loginPassEyeIcon" class="fa-regular fa-eye text-xs"></i>
+            </button>
           </div>
         </div>
 
-        <button type="submit" class="w-full py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs shadow-lg hover:opacity-95 transition">
+        <button type="submit" class="btn-interactive w-full py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs shadow-lg hover:opacity-95">
           Sign In
         </button>
       </form>
 
-      <div class="pt-4 border-t border-slate-200 dark:border-zborder space-y-2">
-        <p class="text-[11px] font-bold text-slate-500 dark:text-zbeige">Pintasan Coba Login Cepat (Klik):</p>
-        <div class="grid grid-cols-2 gap-2 text-[11px]">
-          <button onclick="quickLogin('zeravaproduction@gmail.com')" class="p-2.5 rounded-xl bg-slate-100 dark:bg-zdark border border-slate-200 dark:border-zborder text-left hover:opacity-80">
-            <div class="font-bold text-slate-900 dark:text-white">Admin Zerava</div>
-            <div class="text-[10px] text-slate-500 dark:text-gray-400 truncate">zeravaproduction@gmail.com</div>
-          </button>
-          <button onclick="quickLogin('ghaniyyakbarrramandhio@gmail.com')" class="p-2.5 rounded-xl bg-slate-100 dark:bg-zdark border border-slate-200 dark:border-zborder text-left hover:opacity-80">
-            <div class="font-bold text-slate-900 dark:text-white">Ghaniyy (Ketua)</div>
-            <div class="text-[10px] text-slate-500 dark:text-gray-400 truncate">Kameramen • Ketua</div>
-          </button>
-          <button onclick="quickLogin('kikiivanda4@gmail.com')" class="p-2.5 rounded-xl bg-slate-100 dark:bg-zdark border border-slate-200 dark:border-zborder text-left hover:opacity-80">
-            <div class="font-bold text-slate-900 dark:text-white">Rifky Ivanda</div>
-            <div class="text-[10px] text-slate-500 dark:text-gray-400 truncate">Soundman • Anggota</div>
-          </button>
-          <button onclick="quickLogin('martiantian510@gmail.com')" class="p-2.5 rounded-xl bg-slate-100 dark:bg-zdark border border-slate-200 dark:border-zborder text-left hover:opacity-80">
-            <div class="font-bold text-slate-900 dark:text-white">Dwi Sebastian</div>
-            <div class="text-[10px] text-slate-500 dark:text-gray-400 truncate">Gaffer • Anggota</div>
-          </button>
+      <!-- QUICK LOGIN: HANYA MUNCUL JIKA PERNAH LOGIN DI PERANGKAT INI (REVISI #9) -->
+      <div id="savedLoginSection" class="hidden pt-4 border-t border-slate-200 dark:border-zborder space-y-2.5">
+        <div class="flex items-center justify-between">
+          <p class="text-[11px] font-bold text-slate-500 dark:text-zbeige">Akun Tersimpan di Perangkat Ini:</p>
         </div>
+        <div id="savedLoginList" class="grid grid-cols-1 gap-2 text-xs"></div>
       </div>
     </div>
   </section>
@@ -153,7 +216,7 @@
        VIEW 2: HALAMAN PEMBUATAN PASSWORD (DARI LINK EMAIL ADMIN)
        ================================================================= -->
   <section id="setPasswordView" class="min-h-screen hidden items-center justify-center p-5">
-    <div class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl max-w-md w-full p-7 shadow-2xl space-y-5">
+    <div class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl max-w-md w-full p-7 shadow-2xl space-y-5 animate-page">
       <div class="zerava-logo-slot"></div>
       <div>
         <span class="text-[11px] uppercase tracking-wider font-bold text-zteal dark:text-zbeige">Aktivasi Akun Member</span>
@@ -166,15 +229,27 @@
       <form id="setPassForm" onsubmit="handleSaveNewPassword(event)" class="space-y-4">
         <div>
           <label class="block text-xs font-semibold mb-1">Password Baru</label>
-          <input id="newPass1" type="password" required minlength="6" placeholder="Minimal 6 karakter"
-            class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white" />
+          <div class="relative">
+            <input id="newPass1" type="password" required minlength="6" placeholder="Minimal 6 karakter"
+              class="w-full pl-4 pr-11 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white" />
+            <button type="button" onclick="togglePasswordVisibility('newPass1', 'eyeNewPass1')"
+              class="absolute right-3 top-2.5 w-7 h-7 flex items-center justify-center text-slate-400 hover:text-white">
+              <i id="eyeNewPass1" class="fa-regular fa-eye text-xs"></i>
+            </button>
+          </div>
         </div>
         <div>
           <label class="block text-xs font-semibold mb-1">Ulangi Password Baru</label>
-          <input id="newPass2" type="password" required minlength="6" placeholder="Ketik ulang password"
-            class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white" />
+          <div class="relative">
+            <input id="newPass2" type="password" required minlength="6" placeholder="Ketik ulang password"
+              class="w-full pl-4 pr-11 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white" />
+            <button type="button" onclick="togglePasswordVisibility('newPass2', 'eyeNewPass2')"
+              class="absolute right-3 top-2.5 w-7 h-7 flex items-center justify-center text-slate-400 hover:text-white">
+              <i id="eyeNewPass2" class="fa-regular fa-eye text-xs"></i>
+            </button>
+          </div>
         </div>
-        <button type="submit" class="w-full py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
+        <button type="submit" class="btn-interactive w-full py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
           Simpan Password
         </button>
       </form>
@@ -185,7 +260,7 @@
         </div>
         <h3 class="text-base font-bold text-slate-900 dark:text-white">Password Berhasil Disimpan!</h3>
         <p class="text-xs text-slate-500 dark:text-gray-300">Silakan klik tombol di bawah untuk masuk ke halaman Login.</p>
-        <button onclick="finishSetPasswordToLogin()" class="w-full py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
+        <button onclick="finishSetPasswordToLogin()" class="btn-interactive w-full py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
           Lanjutkan ke Halaman Login <i class="fa-solid fa-arrow-right ml-1"></i>
         </button>
       </div>
@@ -193,35 +268,35 @@
   </section>
 
   <!-- =================================================================
-       VIEW 3: MAIN APP SHELL (TOP HEADER + PAGES + BOTTOM TAB BAR)
+       VIEW 3: MAIN APP SHELL
        ================================================================= -->
   <div id="mainAppShell" class="hidden min-h-screen flex flex-col pb-20">
 
     <!-- TOP BAR: LOGO DI KIRI & NOTIFIKASI DI KANAN -->
-    <header class="sticky top-0 z-40 bg-white/90 dark:bg-zcard/90 backdrop-blur-md border-b border-slate-200 dark:border-zborder px-4 py-3">
+    <header id="mainTopHeader" class="sticky top-0 z-40 bg-white/90 dark:bg-zcard/90 backdrop-blur-md border-b border-slate-200 dark:border-zborder px-4 py-3">
       <div class="max-w-4xl mx-auto flex items-center justify-between">
         <div onclick="navigateTo('home')" class="cursor-pointer zerava-logo-slot"></div>
 
         <div class="flex items-center gap-2">
           <button onclick="toggleTheme()" title="Ganti Tema Gelap/Terang"
-            class="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-zdark border border-slate-200 dark:border-zborder flex items-center justify-center text-slate-700 dark:text-zbeige text-sm">
+            class="btn-interactive w-10 h-10 rounded-2xl bg-slate-100 dark:bg-zdark border border-slate-200 dark:border-zborder flex items-center justify-center text-slate-700 dark:text-zbeige text-sm">
             <i id="themeToggleIcon" class="fa-solid fa-sun"></i>
           </button>
 
           <button onclick="navigateTo('notifications')" title="Notifikasi"
-            class="relative w-10 h-10 rounded-2xl bg-slate-100 dark:bg-zdark border border-slate-200 dark:border-zborder flex items-center justify-center text-slate-700 dark:text-white text-sm">
+            class="btn-interactive relative w-10 h-10 rounded-2xl bg-slate-100 dark:bg-zdark border border-slate-200 dark:border-zborder flex items-center justify-center text-slate-700 dark:text-white text-sm">
             <i class="fa-regular fa-bell"></i>
-            <span id="topNotifBadge" class="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-red-500 text-white text-[10px] font-bold">2</span>
+            <span id="topNotifBadge" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-extrabold items-center justify-center">0</span>
           </button>
         </div>
       </div>
     </header>
 
     <!-- MAIN DYNAMIC PAGE CONTAINER -->
-    <main class="flex-1 max-w-4xl w-full mx-auto p-4 md:p-6">
+    <main id="mainContentArea" class="flex-1 max-w-4xl w-full mx-auto p-4 md:p-6">
 
       <!-- 1. HOME PAGE -->
-      <section id="page-home" class="app-page space-y-6">
+      <section id="page-home" class="app-page animate-page space-y-6">
         <div class="rounded-3xl bg-gradient-to-br from-zteal to-slate-900 dark:from-[#1F1C24] dark:via-[#292330] dark:to-zcard border border-slate-200 dark:border-zbeige/20 p-6 md:p-8 text-white shadow-xl">
           <span class="inline-block px-3 py-1 rounded-full bg-white/15 text-xs font-semibold mb-3">
             Awal yang sederhana, Kelak jadi sinema.
@@ -257,7 +332,7 @@
           </div>
           <div class="pt-1">
             <a href="https://zerava.web.id" target="_blank" rel="noopener noreferrer"
-              class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs shadow hover:opacity-95 transition">
+              class="btn-interactive inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs shadow hover:opacity-95">
               <span>Pelajari Lebih Lanjut</span>
               <i class="fa-solid fa-arrow-up-right-from-square"></i>
             </a>
@@ -266,13 +341,13 @@
       </section>
 
       <!-- 2. CHAT LIST PAGE -->
-      <section id="page-chat" class="app-page hidden space-y-4">
+      <section id="page-chat" class="app-page animate-page hidden space-y-4">
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Chat & Komunitas</h2>
-            <p class="text-xs text-slate-500 dark:text-gray-400">Klik foto profil member untuk membuka halaman profil & julukan</p>
+            <p class="text-xs text-slate-500 dark:text-gray-400">Chat terbaru otomatis berada di urutan paling atas</p>
           </div>
-          <button onclick="navigateTo('create-group')" class="px-4 py-2.5 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
+          <button onclick="navigateTo('create-group')" class="btn-interactive px-4 py-2.5 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
             <i class="fa-solid fa-plus mr-1"></i> Buat Grup
           </button>
         </div>
@@ -290,15 +365,19 @@
           </div>
         </div>
 
-        <div id="chatDirectoryList" class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl divide-y divide-slate-100 dark:divide-zborder overflow-hidden"></div>
+        <div id="chatDirectoryList" class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl divide-y divide-slate-100 dark:divide-zborder overflow-hidden shadow-sm"></div>
       </section>
 
-      <!-- 2B. RUANG OBROLAN AKTIF -->
-      <section id="page-chat-room" class="app-page hidden flex flex-col h-[calc(100vh-155px)] bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl overflow-hidden">
-        <div id="chatRoomHeader" class="p-3.5 border-b border-slate-200 dark:border-zborder flex items-center justify-between bg-slate-50 dark:bg-zcard"></div>
-        <div id="chatRoomMessages" class="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50 dark:bg-[#141412]"></div>
+      <!-- 2B. RUANG OBROLAN FULL-SCREEN ALA WA / DM IG (REVISI #3 & #4) -->
+      <section id="page-chat-room" class="app-page hidden fixed inset-0 z-[60] flex flex-col bg-[#EFEAE2] dark:bg-[#0D0D0B]">
+        <!-- Header Chat Tetap di Atas (Sticky/Fixed) -->
+        <div id="chatRoomHeader" class="shrink-0 px-4 py-3 border-b border-slate-200 dark:border-zborder flex items-center justify-between bg-white dark:bg-zcard shadow-sm"></div>
 
-        <div id="chatReplyBanner" class="hidden px-4 py-2 bg-slate-100 dark:bg-zdark border-t border-slate-200 dark:border-zborder items-center justify-between text-xs">
+        <!-- Area Pesan yang Bisa Di-scroll Tanpa Menggeser Kolom Ketik -->
+        <div id="chatRoomMessages" class="flex-1 p-4 overflow-y-auto space-y-2.5"></div>
+
+        <!-- Banner Balas Pesan -->
+        <div id="chatReplyBanner" class="hidden shrink-0 px-4 py-2 bg-slate-100 dark:bg-zcard border-t border-slate-200 dark:border-zborder items-center justify-between text-xs">
           <div class="truncate">
             <span class="text-slate-500 dark:text-gray-400">Membalas <b id="chatReplySender" class="text-zteal dark:text-zbeige"></b>:</span>
             <span id="chatReplyText" class="ml-1 text-slate-700 dark:text-gray-300"></span>
@@ -306,17 +385,18 @@
           <button onclick="clearChatReply()" class="text-slate-400 hover:text-red-400"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
-        <form onsubmit="handleSendChatMessage(event)" class="p-3 border-t border-slate-200 dark:border-zborder flex items-center gap-2 bg-white dark:bg-zcard">
-          <input id="chatRoomInput" type="text" required placeholder="Ketik pesan..."
-            class="flex-1 px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white focus:outline-none" />
-          <button type="submit" class="px-4 py-2.5 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
+        <!-- Kolom Mengetik Pesan Tetap Diam di Bawah (Tidak Ikut Ter-scroll) -->
+        <form onsubmit="handleSendChatMessage(event)" class="shrink-0 p-3 border-t border-slate-200 dark:border-zborder flex items-center gap-2 bg-white dark:bg-zcard">
+          <input id="chatRoomInput" type="text" required autocomplete="off" placeholder="Ketik pesan..."
+            class="flex-1 px-4 py-3 rounded-full bg-slate-100 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white focus:outline-none focus:border-zteal dark:focus:border-zbeige" />
+          <button type="submit" class="btn-interactive w-11 h-11 rounded-full bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-sm flex items-center justify-center shrink-0 shadow-md">
             <i class="fa-solid fa-paper-plane"></i>
           </button>
         </form>
       </section>
 
       <!-- 2C. HALAMAN BUAT GRUP BARU -->
-      <section id="page-create-group" class="app-page hidden space-y-5">
+      <section id="page-create-group" class="app-page animate-page hidden space-y-5">
         <button onclick="goBack()" class="inline-flex items-center gap-2 text-xs font-bold text-zteal dark:text-zbeige">
           <i class="fa-solid fa-arrow-left"></i> Kembali
         </button>
@@ -340,15 +420,15 @@
               <label class="block text-xs font-bold mb-1.5">Pilih Member Grup</label>
               <div id="createGroupMembersList" class="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-zborder bg-slate-50 dark:bg-zdark rounded-2xl border border-slate-200 dark:border-zborder p-2"></div>
             </div>
-            <button type="submit" class="w-full py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
+            <button type="submit" class="btn-interactive w-full py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
               Simpan & Buat Grup
             </button>
           </form>
         </div>
       </section>
 
-      <!-- 2D. HALAMAN INFO GRUP -->
-      <section id="page-group-info" class="app-page hidden space-y-5">
+      <!-- 2D. HALAMAN INFO GRUP (+ FITUR HAPUS GRUP) -->
+      <section id="page-group-info" class="app-page animate-page hidden space-y-5">
         <button onclick="goBack()" class="inline-flex items-center gap-2 text-xs font-bold text-zteal dark:text-zbeige">
           <i class="fa-solid fa-arrow-left"></i> Kembali ke Ruang Chat
         </button>
@@ -356,7 +436,7 @@
       </section>
 
       <!-- 2E. HALAMAN PROFIL MEMBER LAIN & UBAH JULUKAN -->
-      <section id="page-member-profile" class="app-page hidden space-y-5">
+      <section id="page-member-profile" class="app-page animate-page hidden space-y-5">
         <button onclick="goBack()" class="inline-flex items-center gap-2 text-xs font-bold text-zteal dark:text-zbeige">
           <i class="fa-solid fa-arrow-left"></i> Kembali
         </button>
@@ -364,13 +444,13 @@
       </section>
 
       <!-- 3. PRODUCTION FILM PAGE -->
-      <section id="page-production" class="app-page hidden space-y-5">
+      <section id="page-production" class="app-page animate-page hidden space-y-5">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Production Film</h2>
             <p class="text-xs text-slate-500 dark:text-gray-400">Kelola project film Zerava Studio dari ide hingga dokumen syuting</p>
           </div>
-          <button onclick="navigateTo('create-project')" class="px-4 py-2.5 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs self-start">
+          <button onclick="navigateTo('create-project')" class="btn-interactive px-4 py-2.5 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs self-start">
             <i class="fa-solid fa-plus mr-1"></i> Tambah Project
           </button>
         </div>
@@ -385,7 +465,7 @@
       </section>
 
       <!-- 3B. HALAMAN TAMBAH PROJECT BARU -->
-      <section id="page-create-project" class="app-page hidden space-y-5">
+      <section id="page-create-project" class="app-page animate-page hidden space-y-5">
         <button onclick="goBack()" class="inline-flex items-center gap-2 text-xs font-bold text-zteal dark:text-zbeige">
           <i class="fa-solid fa-arrow-left"></i> Kembali ke Production Film
         </button>
@@ -427,7 +507,7 @@
               <input id="projThumbIn" type="file" accept="image/*" onchange="checkFileMax15MB(this)"
                 class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-zteal dark:file:bg-zbeige file:text-white dark:file:text-zdark file:font-bold" />
             </div>
-            <button type="submit" class="w-full py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
+            <button type="submit" class="btn-interactive w-full py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
               Simpan Project Film
             </button>
           </form>
@@ -435,7 +515,7 @@
       </section>
 
       <!-- 3C. DETAIL PROJECT FILM & 5 FITUR PRODUKSI -->
-      <section id="page-project-detail" class="app-page hidden space-y-5">
+      <section id="page-project-detail" class="app-page animate-page hidden space-y-5">
         <button onclick="goBack()" class="inline-flex items-center gap-2 text-xs font-bold text-zteal dark:text-zbeige">
           <i class="fa-solid fa-arrow-left"></i> Kembali ke Daftar Project
         </button>
@@ -443,18 +523,18 @@
         <div id="projectDetailTopCard" class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl p-5 space-y-4"></div>
 
         <div class="flex gap-2 overflow-x-auto pb-1">
-          <button onclick="selectProjSubFeature('ide')" id="subFeat-ide" class="px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap">1. Ide</button>
-          <button onclick="selectProjSubFeature('naskah')" id="subFeat-naskah" class="px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap">2. Naskah</button>
-          <button onclick="selectProjSubFeature('shootlist')" id="subFeat-shootlist" class="px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap">3. Shoot List</button>
-          <button onclick="selectProjSubFeature('storyboard')" id="subFeat-storyboard" class="px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap">4. Story Board</button>
-          <button onclick="selectProjSubFeature('dokumen')" id="subFeat-dokumen" class="px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap">5. Dokumen</button>
+          <button onclick="selectProjSubFeature('ide')" id="subFeat-ide" class="btn-interactive px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap">1. Ide</button>
+          <button onclick="selectProjSubFeature('naskah')" id="subFeat-naskah" class="btn-interactive px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap">2. Naskah</button>
+          <button onclick="selectProjSubFeature('shootlist')" id="subFeat-shootlist" class="btn-interactive px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap">3. Shoot List</button>
+          <button onclick="selectProjSubFeature('storyboard')" id="subFeat-storyboard" class="btn-interactive px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap">4. Story Board</button>
+          <button onclick="selectProjSubFeature('dokumen')" id="subFeat-dokumen" class="btn-interactive px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap">5. Dokumen</button>
         </div>
 
         <div id="projectSubFeatureBody" class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl p-5"></div>
       </section>
 
       <!-- 3D. HALAMAN TAMBAH IDE / UPLOAD FILE PROJECT -->
-      <section id="page-project-add-item" class="app-page hidden space-y-5">
+      <section id="page-project-add-item" class="app-page animate-page hidden space-y-5">
         <button onclick="goBack()" class="inline-flex items-center gap-2 text-xs font-bold text-zteal dark:text-zbeige">
           <i class="fa-solid fa-arrow-left"></i> Kembali ke Detail Project
         </button>
@@ -462,13 +542,13 @@
       </section>
 
       <!-- 4. ZERAVA CLASS PAGE -->
-      <section id="page-class" class="app-page hidden space-y-5">
+      <section id="page-class" class="app-page animate-page hidden space-y-5">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Zerava Class</h2>
             <p class="text-xs text-slate-500 dark:text-gray-400">Mau belajar tentang film? Yuk sharing-sharing ilmu di sini</p>
           </div>
-          <button onclick="navigateTo('create-class')" class="px-4 py-2.5 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs self-start">
+          <button onclick="navigateTo('create-class')" class="btn-interactive px-4 py-2.5 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs self-start">
             <i class="fa-solid fa-plus mr-1"></i> Tambah Materi
           </button>
         </div>
@@ -483,7 +563,7 @@
       </section>
 
       <!-- 4B. HALAMAN TAMBAH MATERI ZERAVA CLASS -->
-      <section id="page-create-class" class="app-page hidden space-y-5">
+      <section id="page-create-class" class="app-page animate-page hidden space-y-5">
         <button onclick="goBack()" class="inline-flex items-center gap-2 text-xs font-bold text-zteal dark:text-zbeige">
           <i class="fa-solid fa-arrow-left"></i> Kembali ke Zerava Class
         </button>
@@ -518,7 +598,7 @@
               <input id="newMatLink" type="url" placeholder="https://..."
                 class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white" />
             </div>
-            <button type="submit" class="w-full py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
+            <button type="submit" class="btn-interactive w-full py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
               Bagikan Materi Sekarang
             </button>
           </form>
@@ -526,24 +606,27 @@
       </section>
 
       <!-- 4C. HALAMAN DETAIL MATERI ZERAVA CLASS -->
-      <section id="page-class-detail" class="app-page hidden space-y-5">
+      <section id="page-class-detail" class="app-page animate-page hidden space-y-5">
         <button onclick="goBack()" class="inline-flex items-center gap-2 text-xs font-bold text-zteal dark:text-zbeige">
           <i class="fa-solid fa-arrow-left"></i> Kembali
         </button>
         <div id="classDetailPageContent" class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl overflow-hidden shadow-lg"></div>
       </section>
 
-      <!-- 5. NOTIFICATIONS PAGE -->
-      <section id="page-notifications" class="app-page hidden space-y-5">
+      <!-- 5. NOTIFICATIONS PAGE (OTOMATIS MENCATAT CHAT & AKTIVITAS - REVISI #1 & #2) -->
+      <section id="page-notifications" class="app-page animate-page hidden space-y-5">
         <div class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl p-5 space-y-4">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 class="text-lg font-extrabold text-slate-900 dark:text-white">Notifikasi & Pesan Masuk</h2>
+              <h2 class="text-lg font-extrabold text-slate-900 dark:text-white">Notifikasi Aktivitas & Chat</h2>
               <p id="pushStatusSubtitle" class="text-xs text-slate-500 dark:text-gray-400">Status Izin Notifikasi Perangkat: Mengecek...</p>
             </div>
             <div class="flex flex-wrap gap-2">
-              <button onclick="setupAndTestPushNotification()" class="px-4 py-2.5 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
-                <i class="fa-solid fa-bell mr-1"></i> Aktifkan & Tes Notif Latar Belakang
+              <button onclick="setupAndTestPushNotification()" class="btn-interactive px-4 py-2.5 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
+                <i class="fa-solid fa-bell mr-1"></i> Aktifkan & Tes Notif Luar Web
+              </button>
+              <button onclick="confirmClearAllNotifications()" class="btn-interactive px-3.5 py-2.5 rounded-2xl bg-red-500/15 text-red-500 font-bold text-xs">
+                <i class="fa-solid fa-trash-can mr-1"></i> Bersihkan
               </button>
             </div>
           </div>
@@ -552,8 +635,8 @@
         <div id="notifItemsContainer" class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl divide-y divide-slate-100 dark:divide-zborder overflow-hidden"></div>
       </section>
 
-      <!-- 6. MY PROFIL PAGE -->
-      <section id="page-profile" class="app-page hidden space-y-5">
+      <!-- 6. MY PROFIL PAGE (+ KONFIRMASI LOGOUT - REVISI #6) -->
+      <section id="page-profile" class="app-page animate-page hidden space-y-5">
         <div class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl p-6 space-y-6">
           <div class="flex flex-col sm:flex-row items-center gap-5 pb-5 border-b border-slate-200 dark:border-zborder">
             <div class="relative">
@@ -569,7 +652,7 @@
               <p id="myProfEmailText" class="text-xs text-slate-500 dark:text-gray-400">email@gmail.com</p>
             </div>
 
-            <button id="openAdminPageBtn" onclick="navigateTo('admin')" class="hidden px-4 py-2.5 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-600 dark:text-amber-300 font-extrabold text-xs">
+            <button id="openAdminPageBtn" onclick="navigateTo('admin')" class="btn-interactive hidden px-4 py-2.5 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-600 dark:text-amber-300 font-extrabold text-xs">
               <i class="fa-solid fa-user-shield mr-1.5"></i> Buka Halaman Admin
             </button>
           </div>
@@ -588,7 +671,7 @@
               <textarea id="myProfBioIn" rows="2" class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white"></textarea>
             </div>
             <div class="sm:col-span-2 flex justify-end">
-              <button type="submit" class="px-5 py-2.5 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
+              <button type="submit" class="btn-interactive px-5 py-2.5 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
                 Simpan Profil
               </button>
             </div>
@@ -603,16 +686,16 @@
         <div class="bg-white dark:bg-zcard border border-red-500/30 rounded-3xl p-5 flex items-center justify-between">
           <div>
             <h4 class="text-sm font-extrabold text-slate-900 dark:text-white">Keluar dari Akun</h4>
-            <p class="text-xs text-slate-500 dark:text-gray-400">Kembali ke halaman Sign In Zerava Filmboard</p>
+            <p class="text-xs text-slate-500 dark:text-gray-400">Muncul konfirmasi sebelum keluar dari sesi akunmu</p>
           </div>
-          <button onclick="handleLogout()" class="px-5 py-2.5 rounded-2xl bg-red-500 text-white font-extrabold text-xs shadow hover:bg-red-600 transition">
+          <button onclick="requestLogoutConfirmation()" class="btn-interactive px-5 py-2.5 rounded-2xl bg-red-500 text-white font-extrabold text-xs shadow hover:bg-red-600">
             <i class="fa-solid fa-right-from-bracket mr-1.5"></i> Logout
           </button>
         </div>
       </section>
 
       <!-- 7. HALAMAN ADMIN -->
-      <section id="page-admin" class="app-page hidden space-y-5">
+      <section id="page-admin" class="app-page animate-page hidden space-y-5">
         <button onclick="goBack()" class="inline-flex items-center gap-2 text-xs font-bold text-zteal dark:text-zbeige">
           <i class="fa-solid fa-arrow-left"></i> Kembali ke My Profil
         </button>
@@ -646,7 +729,7 @@
                 class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white" />
             </div>
             <div class="sm:col-span-2">
-              <button type="submit" class="w-full py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
+              <button type="submit" class="btn-interactive w-full py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
                 <i class="fa-solid fa-paper-plane mr-1.5"></i> Kirim Link Pembuatan Password ke Email
               </button>
             </div>
@@ -661,26 +744,29 @@
 
     </main>
 
-    <!-- BOTTOM TAB BAR -->
-    <nav class="fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-zcard/95 backdrop-blur-md border-t border-slate-200 dark:border-zborder">
+    <!-- BOTTOM TAB BAR (DENGAN BADGE JUMLAH CHAT BELUM DIBACA) -->
+    <nav id="mainBottomNav" class="fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-zcard/95 backdrop-blur-md border-t border-slate-200 dark:border-zborder">
       <div class="max-w-md mx-auto grid grid-cols-5 py-1.5 px-2">
-        <button onclick="navigateTo('home')" id="bnav-home" class="bnav-item flex flex-col items-center justify-center py-1.5 rounded-2xl transition">
+        <button onclick="navigateTo('home')" id="bnav-home" class="bnav-item btn-interactive flex flex-col items-center justify-center py-1.5 rounded-2xl transition">
           <i class="fa-solid fa-house text-base"></i>
           <span class="text-[10px] font-bold mt-1">Home</span>
         </button>
-        <button onclick="navigateTo('chat')" id="bnav-chat" class="bnav-item flex flex-col items-center justify-center py-1.5 rounded-2xl transition">
-          <i class="fa-regular fa-comments text-base"></i>
+        <button onclick="navigateTo('chat')" id="bnav-chat" class="bnav-item btn-interactive relative flex flex-col items-center justify-center py-1.5 rounded-2xl transition">
+          <div class="relative">
+            <i class="fa-regular fa-comments text-base"></i>
+            <span id="bnavChatUnreadBadge" class="hidden absolute -top-1.5 -right-2.5 min-w-[16px] h-[16px] px-1 rounded-full bg-emerald-500 text-white text-[9px] font-extrabold items-center justify-center">0</span>
+          </div>
           <span class="text-[10px] font-bold mt-1">Chat</span>
         </button>
-        <button onclick="navigateTo('production')" id="bnav-production" class="bnav-item flex flex-col items-center justify-center py-1.5 rounded-2xl transition">
+        <button onclick="navigateTo('production')" id="bnav-production" class="bnav-item btn-interactive flex flex-col items-center justify-center py-1.5 rounded-2xl transition">
           <i class="fa-solid fa-clapperboard text-base"></i>
           <span class="text-[10px] font-bold mt-1">Production</span>
         </button>
-        <button onclick="navigateTo('class')" id="bnav-class" class="bnav-item flex flex-col items-center justify-center py-1.5 rounded-2xl transition">
+        <button onclick="navigateTo('class')" id="bnav-class" class="bnav-item btn-interactive flex flex-col items-center justify-center py-1.5 rounded-2xl transition">
           <i class="fa-solid fa-graduation-cap text-base"></i>
           <span class="text-[10px] font-bold mt-1">Class</span>
         </button>
-        <button onclick="navigateTo('profile')" id="bnav-profile" class="bnav-item flex flex-col items-center justify-center py-1.5 rounded-2xl transition">
+        <button onclick="navigateTo('profile')" id="bnav-profile" class="bnav-item btn-interactive flex flex-col items-center justify-center py-1.5 rounded-2xl transition">
           <i class="fa-regular fa-user text-base"></i>
           <span class="text-[10px] font-bold mt-1">Profil</span>
         </button>
@@ -690,10 +776,9 @@
   </div>
 
   <!-- =================================================================
-       JAVASCRIPT ENGINE (TERHUBUNG KE SUPABASE & CLOUDINARY MILIKMU)
+       JAVASCRIPT ENGINE (FULL REVISION)
        ================================================================= -->
   <script>
-    // 1. KONFIGURASI RESMI SUPABASE & CLOUDINARY MILIK ZERAVA
     const SUPABASE_URL = 'https://kfnevcwlbnsoavlqtacd.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_O5CMGPu_C8AaMhJKbAl4Qg_zX_JYvio';
     const CLOUDINARY_CLOUD_NAME = 'nq7c5vor';
@@ -702,7 +787,7 @@
 
     const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-    function showLoading(msg = 'Menyimpan ke Cloud...') {
+    function showLoading(msg = 'Memproses...') {
       document.getElementById('loadingText').textContent = msg;
       document.getElementById('loadingOverlay').classList.remove('hidden');
       document.getElementById('loadingOverlay').classList.add('flex');
@@ -713,12 +798,70 @@
       document.getElementById('loadingOverlay').classList.remove('flex');
     }
 
-    // 2. FUNGSI UPLOAD KE CLOUDINARY (25 GB) + AUTO-COMPRESS GAMBAR
+    // ---------------- FITUR LIHAT PASSWORD / IKON MATA (REVISI #8) ----------------
+    function togglePasswordVisibility(inputId, iconId) {
+      const inp = document.getElementById(inputId);
+      const ic = document.getElementById(iconId);
+      if (!inp) return;
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        if (ic) ic.className = 'fa-regular fa-eye-slash text-xs text-zteal dark:text-zbeige';
+      } else {
+        inp.type = 'password';
+        if (ic) ic.className = 'fa-regular fa-eye text-xs';
+      }
+    }
+
+    // ---------------- POP-UP NOTIFIKASI DI TENGAH ATAS LAYAR (REVISI #7) ----------------
+    let topPopupTimer = null;
+    function showTopPopup(title, message, icon = 'fa-circle-check') {
+      const box = document.getElementById('topCenterPopup');
+      document.getElementById('topPopupTitle').textContent = title;
+      document.getElementById('topPopupMessage').innerHTML = message;
+      document.getElementById('topPopupIcon').className = `fa-solid ${icon}`;
+      box.classList.remove('hidden');
+      box.classList.add('animate-top-toast');
+
+      if (topPopupTimer) clearTimeout(topPopupTimer);
+      topPopupTimer = setTimeout(() => {
+        closeTopPopup();
+      }, 4000);
+    }
+
+    function closeTopPopup() {
+      const box = document.getElementById('topCenterPopup');
+      box.classList.add('hidden');
+    }
+
+    // ---------------- DIALOG KONFIRMASI HAPUS & LOGOUT (REVISI #5 & #6) ----------------
+    let pendingConfirmAction = null;
+    function openConfirmDialog(title, message, onConfirm, btnText = 'Ya, Hapus') {
+      document.getElementById('confirmDialogTitle').textContent = title;
+      document.getElementById('confirmDialogMessage').innerHTML = message;
+      const yesBtn = document.getElementById('confirmDialogYesBtn');
+      yesBtn.textContent = btnText;
+      pendingConfirmAction = onConfirm;
+      yesBtn.onclick = async () => {
+        const fn = pendingConfirmAction;
+        closeConfirmDialog();
+        if (fn) await fn();
+      };
+      const overlay = document.getElementById('confirmDialogOverlay');
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+    }
+
+    function closeConfirmDialog() {
+      const overlay = document.getElementById('confirmDialogOverlay');
+      overlay.classList.add('hidden');
+      overlay.classList.remove('flex');
+      pendingConfirmAction = null;
+    }
+
+    // ---------------- UPLOAD CLOUDINARY & AUTO-COMPRESS ----------------
     async function uploadFileToCloud(file) {
       if (!file) return null;
       showLoading(`Meng-upload ${file.name}...`);
-
-      // Coba upload ke Cloudinary terlebih dahulu
       const presetsToTry = [CLOUDINARY_PRESET, CLOUDINARY_CLOUD_NAME, 'ml_default'];
       for (const preset of presetsToTry) {
         try {
@@ -736,15 +879,11 @@
           }
         } catch (err) {}
       }
-
-      // Fallback cerdas: Kompres otomatis jika gambar agar tetap tersimpan online di database
       if (file.type.startsWith('image/')) {
         const compressed = await compressImageFile(file);
         hideLoading();
         return compressed;
       }
-
-      // Fallback untuk dokumen <= 15 MB
       return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = () => { hideLoading(); resolve(reader.result); };
@@ -773,7 +912,7 @@
       });
     }
 
-    // 3. LOGO ZERAVA OTOMATIS (PUTIH SAAT GELAP, TEAL SAAT TERANG)
+    // ---------------- LOGO ZERAVA OTOMATIS ----------------
     function renderAllLogos() {
       const isDark = document.documentElement.classList.contains('dark');
       const imgFile = isDark ? 'Zerava (putih).png' : 'Document from ᨳ Jellyna (4).png';
@@ -802,9 +941,7 @@
       });
 
       const themeIcon = document.getElementById('themeToggleIcon');
-      if (themeIcon) {
-        themeIcon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-      }
+      if (themeIcon) themeIcon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
     }
 
     function toggleTheme() {
@@ -813,7 +950,7 @@
       renderAllLogos();
     }
 
-    // 4. DATA AWAL 30 ANGGOTA + ADMIN ZERAVA
+    // ---------------- DATA 30 ANGGOTA + ADMIN ZERAVA ----------------
     const rawMembersList = [
       ['Admin Zerava Studio', 'zeravaproduction@gmail.com', 'Management', 'Admin'],
       ['Rifky Ivanda Hardiansyah', 'kikiivanda4@gmail.com', 'Soundman', 'Anggota'],
@@ -873,8 +1010,8 @@
         }
       ],
       messages: [
-        { id: 'm1', roomId: 'g_main', senderId: 'u_22', text: 'Teman-teman besok kumpul produksi tepat waktu ya!', time: '09:15', replyTo: null },
-        { id: 'm2', roomId: 'g_main', senderId: 'u_1', text: 'Siap, alat audio sudah aman semua.', time: '09:18', replyTo: null }
+        { id: 'm1', roomId: 'g_main', senderId: 'u_22', text: 'Teman-teman besok kumpul produksi tepat waktu ya!', time: '09:15', createdAt: '2026-11-15T02:15:00Z', replyTo: null },
+        { id: 'm2', roomId: 'g_main', senderId: 'u_1', text: 'Siap, alat audio sudah aman semua.', time: '09:18', createdAt: '2026-11-15T02:18:00Z', replyTo: null }
       ],
       projects: [
         {
@@ -912,14 +1049,12 @@
           uploaderId: 'u_12'
         }
       ],
-      notifications: [
-        { id: 'n_1', type: 'chat', title: 'Pesan Grup: Zerava Production', body: 'Ghaniyy: Teman-teman besok kumpul produksi tepat waktu ya!', time: '09:15', page: 'chat' }
-      ],
+      notifications: [],
       invites: []
     };
 
-    let db = JSON.parse(localStorage.getItem('zerava_v3_db')) || defaultDatabase;
-    let currentUser = JSON.parse(localStorage.getItem('zerava_v3_user')) || null;
+    let db = JSON.parse(localStorage.getItem('zerava_v4_db')) || defaultDatabase;
+    let currentUser = JSON.parse(localStorage.getItem('zerava_v4_user')) || null;
     let currentChatFilter = 'all';
     let currentRoom = { type: 'group', id: 'g_main' };
     let currentReply = null;
@@ -930,14 +1065,109 @@
     let navStack = ['home'];
 
     function saveDbLocal() {
-      localStorage.setItem('zerava_v3_db', JSON.stringify(db));
+      localStorage.setItem('zerava_v4_db', JSON.stringify(db));
     }
 
-    // 5. SINKRONISASI DUA ARAH DENGAN SUPABASE ONLINE
-    async function syncFromSupabase() {
+    // ---------------- PENCATATAN UNREAD CHAT & URUTAN TERATAS (REVISI #4) ----------------
+    function getLastReadMap() {
+      if (!currentUser) return {};
+      return JSON.parse(localStorage.getItem(`zerava_read_${currentUser.id}`) || '{}');
+    }
+
+    function markRoomAsRead(roomKey) {
+      if (!currentUser) return;
+      const map = getLastReadMap();
+      map[roomKey] = Date.now();
+      localStorage.setItem(`zerava_read_${currentUser.id}`, JSON.stringify(map));
+      updateGlobalBadges();
+    }
+
+    function getMsgTimestamp(m) {
+      if (m.createdAt) return new Date(m.createdAt).getTime();
+      if (m.id && m.id.startsWith('m_')) {
+        const num = parseInt(m.id.replace('m_', ''), 10);
+        if (!isNaN(num)) return num;
+      }
+      return 1000;
+    }
+
+    function getRoomUnreadCount(roomKey) {
+      if (!currentUser) return 0;
+      const map = getLastReadMap();
+      const lastRead = map[roomKey] || 0;
+      return db.messages.filter(m => m.roomId === roomKey && m.senderId !== currentUser.id && getMsgTimestamp(m) > lastRead).length;
+    }
+
+    function getTotalUnreadChatCount() {
+      if (!currentUser) return 0;
+      let total = 0;
+      db.groups.forEach(g => { total += getRoomUnreadCount(g.id); });
+      db.users.filter(u => u.id !== currentUser.id).forEach(u => {
+        total += getRoomUnreadCount(getDmRoomKey(currentUser.id, u.id));
+      });
+      return total;
+    }
+
+    function updateGlobalBadges() {
+      // Badge Lonceng Notifikasi Atas
+      const topBadge = document.getElementById('topNotifBadge');
+      if (topBadge) {
+        const nCount = db.notifications.length;
+        topBadge.textContent = nCount > 99 ? '99+' : nCount;
+        if (nCount > 0) {
+          topBadge.classList.remove('hidden');
+          topBadge.classList.add('flex');
+        } else {
+          topBadge.classList.add('hidden');
+          topBadge.classList.remove('flex');
+        }
+      }
+
+      // Badge Unread Chat di Bottom Bar
+      const chatBadge = document.getElementById('bnavChatUnreadBadge');
+      if (chatBadge) {
+        const cCount = getTotalUnreadChatCount();
+        chatBadge.textContent = cCount > 99 ? '99+' : cCount;
+        if (cCount > 0) {
+          chatBadge.classList.remove('hidden');
+          chatBadge.classList.add('flex');
+        } else {
+          chatBadge.classList.add('hidden');
+          chatBadge.classList.remove('flex');
+        }
+      }
+    }
+
+    // ---------------- TAMBAH NOTIFIKASI KE PAGE NOTIFIKASI & SUPABASE (REVISI #1) ----------------
+    async function createAndBroadcastNotification(type, title, body, page = 'home') {
+      const newNotif = {
+        id: 'n_' + Date.now() + '_' + Math.floor(Math.random() * 100),
+        type,
+        title,
+        body,
+        time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+        page
+      };
+      db.notifications.unshift(newNotif);
+      saveDbLocal();
+      updateGlobalBadges();
+
+      if (sb) {
+        try {
+          await sb.from('zerava_notifications').insert([{
+            id: newNotif.id, type: newNotif.type, title: newNotif.title, body: newNotif.body, time: newNotif.time, page: newNotif.page
+          }]);
+        } catch (e) {}
+      }
+    }
+
+    // ---------------- SINKRONISASI SUPABASE & REALTIME ----------------
+    let knownMsgIds = new Set();
+    let knownNotifIds = new Set();
+
+    async function syncFromSupabase(triggerPushForNew = false) {
       if (!sb) return;
       try {
-        // Users
         const { data: uRows } = await sb.from('zerava_users').select('*');
         if (uRows && uRows.length > 0) {
           db.users = uRows.map(r => ({
@@ -946,7 +1176,6 @@
           }));
         }
 
-        // Nicknames
         const { data: nRows } = await sb.from('zerava_nicknames').select('*');
         if (nRows) {
           db.nicknames = {};
@@ -956,97 +1185,78 @@
           });
         }
 
-        // Groups
         const { data: gRows } = await sb.from('zerava_groups').select('*');
-        if (gRows && gRows.length > 0) {
-          db.groups = gRows;
-        } else {
-          await sb.from('zerava_groups').upsert(db.groups);
-        }
+        if (gRows && gRows.length > 0) db.groups = gRows;
 
-        // Messages
         const { data: mRows } = await sb.from('zerava_messages').select('*').order('created_at', { ascending: true });
-        if (mRows && mRows.length > 0) {
+        if (mRows) {
+          mRows.forEach(r => {
+            if (triggerPushForNew && knownMsgIds.size > 0 && !knownMsgIds.has(r.id)) {
+              if (currentUser && r.sender_id !== currentUser.id) {
+                const sName = getMemberDisplayName(r.sender_id);
+                fireSystemNotification(`Pesan Baru dari ${sName}`, r.text, 'chat');
+                showTopPopup(`Pesan Baru • ${sName}`, r.text, 'fa-comment-dots');
+              }
+            }
+            knownMsgIds.add(r.id);
+          });
           db.messages = mRows.map(r => ({
-            id: r.id, roomId: r.room_id, senderId: r.sender_id, text: r.text, time: r.time, replyTo: r.reply_to
+            id: r.id, roomId: r.room_id, senderId: r.sender_id, text: r.text, time: r.time, createdAt: r.created_at, replyTo: r.reply_to
           }));
         }
 
-        // Projects
         const { data: pRows } = await sb.from('zerava_projects').select('*').order('created_at', { ascending: false });
-        if (pRows && pRows.length > 0) {
+        if (pRows) {
           db.projects = pRows.map(r => ({
             id: r.id, title: r.title, desc: r.description, startDate: r.start_date, endDate: r.end_date,
             deadline: r.deadline, status: r.status, thumbnail: r.thumbnail,
             shootListTemplateUrl: r.shootlist_template_url, storyboardTemplateUrl: r.storyboard_template_url,
             ideas: r.ideas || [], naskah: r.naskah || [], shootlist: r.shootlist || [], storyboard: r.storyboard || [], dokumen: r.dokumen || []
           }));
-        } else {
-          const p0 = db.projects[0];
-          await sb.from('zerava_projects').upsert([{
-            id: p0.id, title: p0.title, description: p0.desc, start_date: p0.startDate, end_date: p0.endDate,
-            deadline: p0.deadline, status: p0.status, thumbnail: p0.thumbnail,
-            shootlist_template_url: p0.shootListTemplateUrl, storyboard_template_url: p0.storyboardTemplateUrl,
-            ideas: p0.ideas, naskah: p0.naskah, shootlist: p0.shootlist, storyboard: p0.storyboard, dokumen: p0.dokumen
-          }]);
         }
 
-        // Class Materials
         const { data: cRows } = await sb.from('zerava_class').select('*').order('created_at', { ascending: false });
-        if (cRows && cRows.length > 0) {
+        if (cRows) {
           db.classMaterials = cRows.map(r => ({
             id: r.id, title: r.title, desc: r.description, thumbnail: r.thumbnail,
             fileName: r.file_name, fileSize: r.file_size, url: r.url, uploaderId: r.uploader_id
           }));
-        } else {
-          const c0 = db.classMaterials[0];
-          await sb.from('zerava_class').upsert([{
-            id: c0.id, title: c0.title, description: c0.desc, thumbnail: c0.thumbnail,
-            file_name: c0.fileName, file_size: c0.fileSize, url: c0.url, uploader_id: c0.uploaderId
-          }]);
         }
 
-        // Notifications
-        const { data: notifRows } = await sb.from('zerava_notifications').select('*').order('created_at', { ascending: false }).limit(30);
-        if (notifRows && notifRows.length > 0) {
+        const { data: notifRows } = await sb.from('zerava_notifications').select('*').order('created_at', { ascending: false }).limit(50);
+        if (notifRows) {
+          notifRows.forEach(n => {
+            if (triggerPushForNew && knownNotifIds.size > 0 && !knownNotifIds.has(n.id)) {
+              fireSystemNotification(n.title, n.body, n.page || 'notifications');
+            }
+            knownNotifIds.add(n.id);
+          });
           db.notifications = notifRows;
         }
 
+        const { data: invRows } = await sb.from('zerava_invites').select('*').order('created_at', { ascending: false });
+        if (invRows) db.invites = invRows;
+
         saveDbLocal();
+        updateGlobalBadges();
         refreshCurrentView();
-      } catch (e) {
-        console.warn('Menggunakan cache lokal sementara:', e);
-      }
+      } catch (e) {}
     }
 
     function setupRealtimeListeners() {
       if (!sb) return;
-      sb.channel('zerava-realtime-channel')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'zerava_messages' }, payload => {
-          const r = payload.new;
-          if (!db.messages.find(m => m.id === r.id)) {
-            db.messages.push({ id: r.id, roomId: r.room_id, senderId: r.sender_id, text: r.text, time: r.time, replyTo: r.reply_to });
-            saveDbLocal();
-            refreshCurrentView();
-            if (currentUser && r.sender_id !== currentUser.id) {
-              const senderName = getMemberDisplayName(r.sender_id);
-              fireSystemNotification(`Pesan Baru dari ${senderName}`, r.text);
-            }
-          }
-        })
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'zerava_notifications' }, payload => {
-          const n = payload.new;
-          if (!db.notifications.find(x => x.id === n.id)) {
-            db.notifications.unshift(n);
-            saveDbLocal();
-            refreshCurrentView();
-            fireSystemNotification(n.title, n.body);
-          }
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'zerava_projects' }, () => syncFromSupabase())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'zerava_class' }, () => syncFromSupabase())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'zerava_groups' }, () => syncFromSupabase())
+      sb.channel('zerava-live-v4')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'zerava_messages' }, () => syncFromSupabase(true))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'zerava_notifications' }, () => syncFromSupabase(true))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'zerava_projects' }, () => syncFromSupabase(false))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'zerava_class' }, () => syncFromSupabase(false))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'zerava_groups' }, () => syncFromSupabase(false))
         .subscribe();
+
+      // Polling ringan setiap 7 detik agar saat tab di latar belakang HP tetap menarik notif baru
+      setInterval(() => {
+        if (currentUser) syncFromSupabase(true);
+      }, 7000);
     }
 
     function refreshCurrentView() {
@@ -1059,34 +1269,19 @@
       if (topPage === 'project-detail') renderProjectDetailPage();
       if (topPage === 'class') renderClassList();
       if (topPage === 'notifications') renderNotificationsPage();
-      document.getElementById('topNotifBadge').textContent = db.notifications.length;
+      if (topPage === 'admin') renderAdminPage();
     }
 
-    // 6. CENTERED POP-UP
-    function showCenterPopup(title, message, icon = 'fa-circle-check') {
-      document.getElementById('centerPopupTitle').textContent = title;
-      document.getElementById('centerPopupMessage').innerHTML = message;
-      document.getElementById('centerPopupIcon').className = `fa-solid ${icon}`;
-      const overlay = document.getElementById('centerPopupOverlay');
-      overlay.classList.remove('hidden');
-      overlay.classList.add('flex');
-    }
-
-    function closeCenterPopup() {
-      const overlay = document.getElementById('centerPopupOverlay');
-      overlay.classList.add('hidden');
-      overlay.classList.remove('flex');
-    }
-
+    // ---------------- VALIDASI 15 MB ----------------
     function checkFileMax15MB(inputEl, fallbackUrlId) {
       const file = inputEl.files[0];
       if (!file) return true;
       if (file.size > MAX_UPLOAD_BYTES) {
         const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
         inputEl.value = '';
-        showCenterPopup(
+        showTopPopup(
           'Ukuran File Melebihi 15 MB!',
-          `File <b>${file.name}</b> berukuran <b>${sizeMB} MB</b>.<br><br>Batas maksimal upload adalah <b>15 MB</b>. Silakan upload ke Google Drive/Docs lalu tempelkan <b>Link</b>-nya.`,
+          `File <b>${file.name}</b> (${sizeMB} MB) melebihi batas 15 MB. Silakan gunakan kolom Link Google Drive/Docs.`,
           'fa-triangle-exclamation'
         );
         if (fallbackUrlId && document.getElementById(fallbackUrlId)) {
@@ -1113,11 +1308,27 @@
       return u.name;
     }
 
-    // 7. NAVIGASI HALAMAN & HARDWARE BACK BUTTON HP
+    // ---------------- NAVIGASI & TOMBOL KEMBALI HP ----------------
     function navigateTo(pageId, pushToHistory = true) {
       document.querySelectorAll('.app-page').forEach(p => p.classList.add('hidden'));
       const target = document.getElementById(`page-${pageId}`);
-      if (target) target.classList.remove('hidden');
+      if (target) {
+        target.classList.remove('hidden');
+        target.classList.remove('animate-page');
+        void target.offsetWidth;
+        if (pageId !== 'chat-room') target.classList.add('animate-page');
+      }
+
+      // Sembunyikan Header & Bottom Nav saat di dalam Full-Screen Chat Room ala WA
+      const topHeader = document.getElementById('mainTopHeader');
+      const bottomNav = document.getElementById('mainBottomNav');
+      if (pageId === 'chat-room') {
+        topHeader.classList.add('hidden');
+        bottomNav.classList.add('hidden');
+      } else {
+        topHeader.classList.remove('hidden');
+        bottomNav.classList.remove('hidden');
+      }
 
       const rootTabMap = {
         'home': 'home',
@@ -1129,16 +1340,18 @@
       const activeRoot = rootTabMap[pageId] || '';
 
       document.querySelectorAll('.bnav-item').forEach(btn => {
-        btn.className = 'bnav-item flex flex-col items-center justify-center py-1.5 rounded-2xl text-slate-400 dark:text-gray-400 transition';
+        btn.className = 'bnav-item btn-interactive relative flex flex-col items-center justify-center py-1.5 rounded-2xl text-slate-400 dark:text-gray-400 transition';
       });
       if (activeRoot && document.getElementById(`bnav-${activeRoot}`)) {
-        document.getElementById(`bnav-${activeRoot}`).className = 'bnav-item flex flex-col items-center justify-center py-1.5 rounded-2xl text-zteal dark:text-zbeige font-extrabold transition';
+        document.getElementById(`bnav-${activeRoot}`).className = 'bnav-item btn-interactive relative flex flex-col items-center justify-center py-1.5 rounded-2xl text-zteal dark:text-zbeige font-extrabold transition';
       }
 
       if (pushToHistory) {
         navStack.push(pageId);
         window.history.pushState({ pageId }, '', `#${pageId}`);
       }
+
+      updateGlobalBadges();
 
       if (pageId === 'home') renderHomePage();
       if (pageId === 'chat') renderChatListPage();
@@ -1154,7 +1367,7 @@
       if (pageId === 'profile') renderMyProfilePage();
       if (pageId === 'admin') renderAdminPage();
 
-      window.scrollTo(0, 0);
+      if (pageId !== 'chat-room') window.scrollTo(0, 0);
     }
 
     function goBack() {
@@ -1175,14 +1388,80 @@
       }
     });
 
-    // 8. INIT ON LOAD
+    // ---------------- QUICK LOGIN KHUSUS AKUN YANG PERNAH LOGIN (REVISI #9) ----------------
+    function getSavedDeviceAccounts() {
+      return JSON.parse(localStorage.getItem('zerava_saved_device_accounts') || '[]');
+    }
+
+    function saveAccountToDeviceHistory(userObj) {
+      let list = getSavedDeviceAccounts();
+      list = list.filter(a => a.email.toLowerCase() !== userObj.email.toLowerCase());
+      list.unshift({
+        id: userObj.id,
+        name: userObj.name,
+        email: userObj.email,
+        divisi: userObj.divisi,
+        role: userObj.role,
+        avatar: userObj.avatar
+      });
+      localStorage.setItem('zerava_saved_device_accounts', JSON.stringify(list));
+    }
+
+    function removeSavedDeviceAccount(email, e) {
+      e.stopPropagation();
+      let list = getSavedDeviceAccounts().filter(a => a.email.toLowerCase() !== email.toLowerCase());
+      localStorage.setItem('zerava_saved_device_accounts', JSON.stringify(list));
+      renderSavedLoginAccounts();
+    }
+
+    function renderSavedLoginAccounts() {
+      const section = document.getElementById('savedLoginSection');
+      const container = document.getElementById('savedLoginList');
+      const list = getSavedDeviceAccounts();
+
+      // Jika belum pernah ada akun yang login di HP/browser ini, SEMBUNYIKAN menu Quick Login!
+      if (!list || list.length === 0) {
+        section.classList.add('hidden');
+        return;
+      }
+
+      section.classList.remove('hidden');
+      container.innerHTML = list.map(acc => `
+        <div onclick="loginWithSavedAccount('${acc.email}')" class="card-interactive cursor-pointer p-3 rounded-2xl bg-slate-100 dark:bg-zdark border border-slate-200 dark:border-zborder flex items-center justify-between gap-3 hover:border-zteal dark:hover:border-zbeige">
+          <div class="flex items-center gap-3 min-w-0">
+            <img src="${acc.avatar}" class="w-10 h-10 rounded-xl object-cover shrink-0" />
+            <div class="truncate">
+              <div class="font-extrabold text-xs text-slate-900 dark:text-white truncate">${acc.name}</div>
+              <div class="text-[10px] text-zteal dark:text-zbeige font-semibold truncate">${acc.divisi} • ${acc.email}</div>
+            </div>
+          </div>
+          <button type="button" onclick="removeSavedDeviceAccount('${acc.email}', event)" title="Hapus dari riwayat perangkat" class="text-slate-400 hover:text-red-500 px-2 py-1">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    async function loginWithSavedAccount(email) {
+      await syncFromSupabase(false);
+      const found = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      if (found) {
+        currentUser = found;
+        localStorage.setItem('zerava_v4_user', JSON.stringify(currentUser));
+        enterMainApp();
+        showTopPopup('Selamat Datang Kembali!', `Login cepat sebagai <b>${found.name}</b>.`);
+      }
+    }
+
+    // ---------------- INIT ON LOAD ----------------
     window.addEventListener('DOMContentLoaded', async () => {
       const savedTheme = localStorage.getItem('zerava_theme') || 'dark';
       if (savedTheme === 'light') document.documentElement.classList.remove('dark');
       renderAllLogos();
-      registerInlineServiceWorker();
+      renderSavedLoginAccounts();
+      registerPwaServiceWorker();
 
-      await syncFromSupabase();
+      await syncFromSupabase(false);
       setupRealtimeListeners();
 
       const params = new URLSearchParams(window.location.search);
@@ -1198,14 +1477,12 @@
       }
     });
 
-    function quickLogin(email) {
-      document.getElementById('loginIdentifier').value = email;
-      document.getElementById('loginPassword').value = '123456';
-    }
-
     async function handleLogin(e) {
       e.preventDefault();
-      await syncFromSupabase();
+      showLoading('Memverifikasi akun...');
+      await syncFromSupabase(false);
+      hideLoading();
+
       const iden = document.getElementById('loginIdentifier').value.trim().toLowerCase();
       const pass = document.getElementById('loginPassword').value;
 
@@ -1214,13 +1491,17 @@
       );
 
       if (!found) {
-        showCenterPopup('Login Gagal', 'Email/Nama atau Password tidak sesuai.', 'fa-circle-xmark');
+        showTopPopup('Login Gagal', 'Email/Nama atau Password tidak sesuai. Coba klik ikon mata untuk mengecek ketikan passwordmu.', 'fa-circle-xmark');
         return;
       }
 
       currentUser = found;
-      localStorage.setItem('zerava_v3_user', JSON.stringify(currentUser));
+      localStorage.setItem('zerava_v4_user', JSON.stringify(currentUser));
+      // Simpan ke daftar Quick Login khusus perangkat ini
+      saveAccountToDeviceHistory(found);
+      renderSavedLoginAccounts();
       enterMainApp();
+      showTopPopup('Berhasil Masuk!', `Selamat datang, <b>${found.name}</b>!`);
     }
 
     function enterMainApp() {
@@ -1231,20 +1512,29 @@
       navigateTo('home');
     }
 
-    function handleLogout() {
-      currentUser = null;
-      localStorage.removeItem('zerava_v3_user');
-      document.getElementById('mainAppShell').classList.add('hidden');
-      document.getElementById('loginView').classList.remove('hidden');
-      showCenterPopup('Berhasil Logout', 'Kamu telah keluar dari akun Zerava Filmboard.');
+    // ---------------- KONFIRMASI LOGOUT (REVISI #6) ----------------
+    function requestLogoutConfirmation() {
+      openConfirmDialog(
+        'Konfirmasi Logout',
+        'Apakah kamu yakin ingin keluar dari akun Zerava Filmboard sekarang?',
+        () => {
+          currentUser = null;
+          localStorage.removeItem('zerava_v4_user');
+          document.getElementById('mainAppShell').classList.add('hidden');
+          document.getElementById('loginView').classList.remove('hidden');
+          renderSavedLoginAccounts();
+          showTopPopup('Berhasil Logout', 'Kamu telah keluar dari akun Zerava Filmboard.');
+        },
+        'Ya, Logout'
+      );
     }
 
-    // 9. RENDER HOME
+    // ---------------- 1. HOME PAGE ----------------
     function renderHomePage() {
       document.getElementById('homeUserName').textContent = currentUser.name;
       const grid = document.getElementById('homeWhatsNewGrid');
       grid.innerHTML = db.classMaterials.slice(0, 4).map(m => `
-        <div onclick="openMaterialDetailPage('${m.id}')" class="cursor-pointer bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl overflow-hidden shadow-sm hover:border-zteal dark:hover:border-zbeige transition">
+        <div onclick="openMaterialDetailPage('${m.id}')" class="card-interactive cursor-pointer bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl overflow-hidden shadow-sm hover:border-zteal dark:hover:border-zbeige">
           <img src="${m.thumbnail}" class="w-full h-36 object-cover" />
           <div class="p-4 space-y-1">
             <h4 class="font-extrabold text-sm text-slate-900 dark:text-white">${m.title}</h4>
@@ -1252,17 +1542,17 @@
             <div class="pt-2 text-[11px] font-bold text-zteal dark:text-zbeige">Buka Halaman Materi <i class="fa-solid fa-arrow-right ml-1"></i></div>
           </div>
         </div>
-      `).join('');
+      `).join('') || '<div class="text-xs text-slate-400 py-4">Belum ada materi terbaru.</div>';
     }
 
-    // 10. CHAT, GRUP, & KLIK FOTO PROFIL -> HALAMAN PROFIL MEMBER
+    // ---------------- 2. CHAT LIST (OTOMATIS NAIK KE ATAS + UNREAD BADGE - REVISI #4) ----------------
     function setChatTab(tab) {
       currentChatFilter = tab;
       ['all', 'group', 'member'].forEach(t => {
         const el = document.getElementById(`chatFilter-${t}`);
         el.className = (t === tab)
-          ? 'py-2 rounded-xl font-bold bg-zteal dark:bg-zbeige text-white dark:text-zdark'
-          : 'py-2 rounded-xl font-bold text-slate-500 dark:text-gray-400';
+          ? 'py-2 rounded-xl font-bold bg-zteal dark:bg-zbeige text-white dark:text-zdark transition'
+          : 'py-2 rounded-xl font-bold text-slate-500 dark:text-gray-400 transition';
       });
       renderChatListPage();
     }
@@ -1274,27 +1564,16 @@
     function renderChatListPage() {
       const q = (document.getElementById('chatSearchInput')?.value || '').toLowerCase();
       const container = document.getElementById('chatDirectoryList');
-      let html = '';
+      let entries = [];
 
       if (currentChatFilter === 'all' || currentChatFilter === 'group') {
         db.groups.forEach(g => {
           if (q && !g.name.toLowerCase().includes(q)) return;
           const msgs = db.messages.filter(m => m.roomId === g.id);
           const last = msgs[msgs.length - 1];
-          html += `
-            <div class="p-4 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-white/5 transition">
-              <div onclick="openChatRoom('group', '${g.id}')" class="flex items-center gap-3.5 flex-1 min-w-0 cursor-pointer">
-                <img src="${g.avatar}" class="w-12 h-12 rounded-2xl object-cover shrink-0" />
-                <div class="truncate">
-                  <div class="font-extrabold text-xs text-slate-900 dark:text-white truncate">${g.name}</div>
-                  <div class="text-[11px] text-slate-500 dark:text-gray-400 truncate mt-0.5">
-                    ${last ? getMemberDisplayName(last.senderId) + ': ' + last.text : 'Klik untuk mulai mengobrol'}
-                  </div>
-                </div>
-              </div>
-              <span class="text-[10px] px-2.5 py-1 rounded-full bg-slate-100 dark:bg-zdark text-slate-500 dark:text-gray-400 shrink-0">${(g.members || []).length} anggota</span>
-            </div>
-          `;
+          const lastTs = last ? getMsgTimestamp(last) : 0;
+          const unread = getRoomUnreadCount(g.id);
+          entries.push({ kind: 'group', item: g, lastMsg: last, lastTs, unread });
         });
       }
 
@@ -1302,38 +1581,89 @@
         db.users.filter(u => u.id !== currentUser.id).forEach(u => {
           const disp = getMemberDisplayName(u.id);
           if (q && !disp.toLowerCase().includes(q) && !u.name.toLowerCase().includes(q) && !u.divisi.toLowerCase().includes(q)) return;
-          const hasNick = db.nicknames[currentUser.id]?.[u.id];
+          const rKey = getDmRoomKey(currentUser.id, u.id);
+          const msgs = db.messages.filter(m => m.roomId === rKey);
+          const last = msgs[msgs.length - 1];
+          const lastTs = last ? getMsgTimestamp(last) : 0;
+          const unread = getRoomUnreadCount(rKey);
+          entries.push({ kind: 'member', item: u, lastMsg: last, lastTs, unread });
+        });
+      }
 
-          html += `
+      // Urutkan agar chat yang baru mengirim/menerima pesan otomatis pindah ke paling atas!
+      entries.sort((a, b) => b.lastTs - a.lastTs);
+
+      const html = entries.map(entry => {
+        if (entry.kind === 'group') {
+          const g = entry.item;
+          const last = entry.lastMsg;
+          return `
+            <div class="p-4 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-white/5 transition">
+              <div onclick="openChatRoom('group', '${g.id}')" class="flex items-center gap-3.5 flex-1 min-w-0 cursor-pointer">
+                <div class="relative shrink-0">
+                  <img src="${g.avatar}" class="w-12 h-12 rounded-2xl object-cover" />
+                  <span class="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-md bg-zteal text-white text-[9px] font-bold">Grup</span>
+                </div>
+                <div class="truncate flex-1">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="font-extrabold text-xs text-slate-900 dark:text-white truncate">${g.name}</span>
+                    ${last ? `<span class="text-[10px] ${entry.unread > 0 ? 'text-emerald-500 font-extrabold' : 'text-slate-400'}">${last.time}</span>` : ''}
+                  </div>
+                  <div class="text-[11px] ${entry.unread > 0 ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-500 dark:text-gray-400'} truncate mt-0.5">
+                    ${last ? getMemberDisplayName(last.senderId) + ': ' + last.text : 'Ketuk untuk mulai chat grup'}
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                ${entry.unread > 0 ? `<span class="min-w-[22px] h-[22px] px-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-extrabold flex items-center justify-center">${entry.unread}</span>` : ''}
+                ${g.id !== 'g_main' ? `
+                  <button onclick="confirmDeleteGroup('${g.id}', '${g.name}')" title="Hapus Grup" class="w-8 h-8 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white text-xs flex items-center justify-center transition">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        } else {
+          const u = entry.item;
+          const last = entry.lastMsg;
+          const disp = getMemberDisplayName(u.id);
+          const hasNick = db.nicknames[currentUser.id]?.[u.id];
+          return `
             <div class="p-4 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-white/5 transition">
               <div class="flex items-center gap-3.5 flex-1 min-w-0">
                 <img onclick="openMemberProfilePage('${u.id}')" src="${u.avatar}" title="Klik untuk buka Halaman Profil ${u.name}"
                   class="w-12 h-12 rounded-2xl object-cover shrink-0 cursor-pointer ring-2 ring-transparent hover:ring-zteal dark:hover:ring-zbeige transition" />
                 <div onclick="openChatRoom('dm', '${u.id}')" class="truncate flex-1 cursor-pointer">
-                  <div class="font-extrabold text-xs text-slate-900 dark:text-white truncate">
-                    ${disp} ${hasNick ? `<span class="text-[10px] font-normal text-slate-400">(${u.name})</span>` : ''}
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="font-extrabold text-xs text-slate-900 dark:text-white truncate">
+                      ${disp} ${hasNick ? `<span class="text-[10px] font-normal text-slate-400">(${u.name})</span>` : ''}
+                    </span>
+                    ${last ? `<span class="text-[10px] ${entry.unread > 0 ? 'text-emerald-500 font-extrabold' : 'text-slate-400'}">${last.time}</span>` : ''}
                   </div>
-                  <div class="text-[11px] text-zteal dark:text-zbeige font-semibold">${u.divisi} • ${u.role}</div>
+                  <div class="text-[11px] ${entry.unread > 0 ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-500 dark:text-gray-400'} truncate mt-0.5">
+                    ${last ? last.text : `${u.divisi} • ${u.role}`}
+                  </div>
                 </div>
               </div>
-              <div class="flex items-center gap-1.5">
-                <button onclick="openMemberProfilePage('${u.id}')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zdark text-[11px] font-bold text-slate-600 dark:text-gray-300">
-                  Profil
-                </button>
-                <button onclick="openChatRoom('dm', '${u.id}')" class="px-3 py-1.5 rounded-xl bg-zteal dark:bg-zbeige text-white dark:text-zdark text-[11px] font-bold">
+              <div class="flex items-center gap-1.5 shrink-0">
+                ${entry.unread > 0 ? `<span class="min-w-[22px] h-[22px] px-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-extrabold flex items-center justify-center">${entry.unread}</span>` : ''}
+                <button onclick="openChatRoom('dm', '${u.id}')" class="btn-interactive px-3 py-1.5 rounded-xl bg-zteal dark:bg-zbeige text-white dark:text-zdark text-[11px] font-bold">
                   Chat
                 </button>
               </div>
             </div>
           `;
-        });
-      }
+        }
+      }).join('');
 
       container.innerHTML = html || `<div class="p-8 text-center text-xs text-slate-400">Data tidak ditemukan.</div>`;
     }
 
     function openChatRoom(type, id) {
       currentRoom = { type, id };
+      const rKey = type === 'group' ? id : getDmRoomKey(currentUser.id, id);
+      markRoomAsRead(rKey);
       clearChatReply();
       navigateTo('chat-room');
     }
@@ -1346,37 +1676,41 @@
       if (currentRoom.type === 'group') {
         const g = db.groups.find(x => x.id === currentRoom.id) || db.groups[0];
         roomKey = g.id;
+        markRoomAsRead(roomKey);
         header.innerHTML = `
-          <div class="flex items-center gap-3">
-            <button onclick="goBack()" class="w-8 h-8 rounded-xl bg-slate-200/70 dark:bg-zdark flex items-center justify-center text-xs">
+          <div class="flex items-center gap-3 min-w-0">
+            <button onclick="goBack()" class="btn-interactive w-9 h-9 rounded-full bg-slate-100 dark:bg-zdark flex items-center justify-center text-xs shrink-0">
               <i class="fa-solid fa-arrow-left"></i>
             </button>
-            <img onclick="navigateTo('group-info')" src="${g.avatar}" class="w-10 h-10 rounded-2xl object-cover cursor-pointer" />
-            <div onclick="navigateTo('group-info')" class="cursor-pointer">
-              <div class="font-extrabold text-xs text-slate-900 dark:text-white">${g.name}</div>
+            <img onclick="navigateTo('group-info')" src="${g.avatar}" class="w-10 h-10 rounded-full object-cover cursor-pointer shrink-0" />
+            <div onclick="navigateTo('group-info')" class="cursor-pointer truncate">
+              <div class="font-extrabold text-xs text-slate-900 dark:text-white truncate">${g.name}</div>
               <div class="text-[10px] text-emerald-500 font-semibold">${(g.members || []).length} Anggota • Ketuk untuk Info Grup</div>
             </div>
           </div>
-          <button onclick="navigateTo('group-info')" class="px-3 py-1.5 rounded-xl bg-slate-200/70 dark:bg-zdark text-xs font-bold text-zteal dark:text-zbeige">
-            Info Grup
-          </button>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button onclick="navigateTo('group-info')" class="btn-interactive px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zdark text-xs font-bold text-zteal dark:text-zbeige">
+              Info Grup
+            </button>
+          </div>
         `;
       } else {
         const u = db.users.find(x => x.id === currentRoom.id);
         roomKey = getDmRoomKey(currentUser.id, u.id);
+        markRoomAsRead(roomKey);
         header.innerHTML = `
-          <div class="flex items-center gap-3">
-            <button onclick="goBack()" class="w-8 h-8 rounded-xl bg-slate-200/70 dark:bg-zdark flex items-center justify-center text-xs">
+          <div class="flex items-center gap-3 min-w-0">
+            <button onclick="goBack()" class="btn-interactive w-9 h-9 rounded-full bg-slate-100 dark:bg-zdark flex items-center justify-center text-xs shrink-0">
               <i class="fa-solid fa-arrow-left"></i>
             </button>
-            <img onclick="openMemberProfilePage('${u.id}')" src="${u.avatar}" class="w-10 h-10 rounded-2xl object-cover cursor-pointer" />
-            <div onclick="openMemberProfilePage('${u.id}')" class="cursor-pointer">
-              <div class="font-extrabold text-xs text-slate-900 dark:text-white">${getMemberDisplayName(u.id)}</div>
-              <div class="text-[10px] text-zteal dark:text-zbeige font-semibold">${u.divisi} • Ketuk untuk lihat halaman profil</div>
+            <img onclick="openMemberProfilePage('${u.id}')" src="${u.avatar}" class="w-10 h-10 rounded-full object-cover cursor-pointer shrink-0" />
+            <div onclick="openMemberProfilePage('${u.id}')" class="cursor-pointer truncate">
+              <div class="font-extrabold text-xs text-slate-900 dark:text-white truncate">${getMemberDisplayName(u.id)}</div>
+              <div class="text-[10px] text-zteal dark:text-zbeige font-semibold truncate">${u.divisi} • Ketuk untuk buka profil</div>
             </div>
           </div>
-          <button onclick="openMemberProfilePage('${u.id}')" class="px-3 py-1.5 rounded-xl bg-slate-200/70 dark:bg-zdark text-xs font-bold text-zteal dark:text-zbeige">
-            Buka Profil
+          <button onclick="openMemberProfilePage('${u.id}')" class="btn-interactive px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zdark text-xs font-bold text-zteal dark:text-zbeige shrink-0">
+            Profil
           </button>
         `;
       }
@@ -1386,12 +1720,12 @@
         const isMe = m.senderId === currentUser.id;
         const sender = db.users.find(u => u.id === m.senderId);
         return `
-          <div class="flex items-end gap-2 ${isMe ? 'justify-end' : 'justify-start'}">
+          <div class="flex items-end gap-2 animate-bubble ${isMe ? 'justify-end' : 'justify-start'}">
             ${!isMe ? `
               <img onclick="openMemberProfilePage('${m.senderId}')" src="${sender?.avatar || ''}"
-                class="w-8 h-8 rounded-xl object-cover cursor-pointer shrink-0 hover:scale-105 transition" />
+                class="w-8 h-8 rounded-full object-cover cursor-pointer shrink-0 hover:scale-105 transition" />
             ` : ''}
-            <div class="max-w-xs sm:max-w-md rounded-2xl p-3 ${isMe ? 'bg-zteal dark:bg-zbeige text-white dark:text-zdark rounded-br-none' : 'bg-white dark:bg-zcard border border-slate-200 dark:border-zborder text-slate-900 dark:text-white rounded-bl-none'}">
+            <div class="max-w-[78%] sm:max-w-md rounded-2xl px-3.5 py-2.5 shadow-sm ${isMe ? 'bg-zteal dark:bg-zbeige text-white dark:text-zdark rounded-br-none' : 'bg-white dark:bg-zcard border border-slate-200 dark:border-zborder text-slate-900 dark:text-white rounded-bl-none'}">
               ${!isMe ? `
                 <div onclick="openMemberProfilePage('${m.senderId}')" class="text-[11px] font-extrabold text-zteal dark:text-zpurple cursor-pointer hover:underline mb-0.5">
                   ${getMemberDisplayName(m.senderId)}
@@ -1403,17 +1737,30 @@
                   <div class="truncate opacity-80">${m.replyTo.text}</div>
                 </div>
               ` : ''}
-              <p class="text-xs leading-relaxed">${m.text}</p>
-              <div class="flex items-center justify-end gap-2 mt-1 text-[10px] opacity-70">
+              <p class="text-xs leading-relaxed break-words">${m.text}</p>
+              <div class="flex items-center justify-end gap-2.5 mt-1 text-[10px] opacity-75">
                 <span>${m.time}</span>
-                <button onclick="setChatReply('${m.id}')"><i class="fa-solid fa-reply"></i></button>
+                <button onclick="setChatReply('${m.id}')" title="Balas"><i class="fa-solid fa-reply"></i></button>
+                ${(isMe || currentUser.isAdmin) ? `
+                  <button onclick="confirmDeleteMessage('${m.id}')" title="Hapus Pesan" class="hover:text-red-400"><i class="fa-solid fa-trash-can"></i></button>
+                ` : ''}
               </div>
             </div>
           </div>
         `;
-      }).join('') || `<div class="text-center text-xs text-slate-400 py-10">Belum ada obrolan. Kirim pesan pertama!</div>`;
+      }).join('') || `<div class="text-center text-xs text-slate-400 py-12">Belum ada obrolan. Kirim pesan pertama!</div>`;
 
       box.scrollTop = box.scrollHeight;
+    }
+
+    function confirmDeleteMessage(msgId) {
+      openConfirmDialog('Hapus Pesan Chat?', 'Pesan ini akan dihapus secara permanen dari ruang obrolan.', async () => {
+        db.messages = db.messages.filter(m => m.id !== msgId);
+        saveDbLocal();
+        if (sb) await sb.from('zerava_messages').delete().eq('id', msgId);
+        renderChatRoomPage();
+        showTopPopup('Pesan Dihapus', 'Pesan berhasil dihapus dari obrolan.', 'fa-trash-can');
+      });
     }
 
     function setChatReply(msgId) {
@@ -1440,6 +1787,7 @@
       if (!text) return;
 
       const roomKey = currentRoom.type === 'group' ? currentRoom.id : getDmRoomKey(currentUser.id, currentRoom.id);
+      const nowIso = new Date().toISOString();
       const time = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
       const msgObj = {
         id: 'm_' + Date.now(),
@@ -1447,10 +1795,13 @@
         senderId: currentUser.id,
         text,
         time,
+        createdAt: nowIso,
         replyTo: currentReply
       };
 
+      knownMsgIds.add(msgObj.id);
       db.messages.push(msgObj);
+      markRoomAsRead(roomKey);
       inp.value = '';
       clearChatReply();
       saveDbLocal();
@@ -1461,9 +1812,20 @@
           id: msgObj.id, room_id: msgObj.roomId, sender_id: msgObj.senderId, text: msgObj.text, time: msgObj.time, reply_to: msgObj.replyTo
         }]);
       }
+
+      // Catat juga ke Halaman Notifikasi agar riwayat chat masuk selalu terlihat di Page Notifikasi (REVISI #1)
+      let roomTitle = '';
+      if (currentRoom.type === 'group') {
+        const g = db.groups.find(x => x.id === currentRoom.id);
+        roomTitle = `Pesan Grup ${g ? g.name : ''}`;
+      } else {
+        const u = db.users.find(x => x.id === currentRoom.id);
+        roomTitle = `Chat ke ${u ? u.name : 'Member'}`;
+      }
+      await createAndBroadcastNotification('chat', `${roomTitle}`, `${currentUser.name}: ${text}`, 'chat');
     }
 
-    // 11. HALAMAN PROFIL MEMBER LAIN & JULUKAN KONTAK HP
+    // ---------------- HALAMAN PROFIL MEMBER LAIN & JULUKAN ----------------
     function openMemberProfilePage(userId) {
       currentViewedMemberId = userId;
       navigateTo('member-profile');
@@ -1482,7 +1844,7 @@
             <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">${u.name}</h2>
             <p class="text-xs text-slate-500 dark:text-gray-400">${u.email}</p>
           </div>
-          <button onclick="openChatRoom('dm', '${u.id}')" class="px-5 py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
+          <button onclick="openChatRoom('dm', '${u.id}')" class="btn-interactive px-5 py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
             <i class="fa-regular fa-paper-plane mr-1.5"></i> Kirim Pesan DM
           </button>
         </div>
@@ -1502,7 +1864,7 @@
           <div class="flex gap-2">
             <input id="memberPageNickInput" type="text" value="${currentNick}" placeholder="Contoh: Bastian / Ikyyy"
               class="flex-1 px-4 py-2.5 rounded-xl bg-white dark:bg-zcard border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white" />
-            <button onclick="handleSaveMemberNickname('${u.id}')" class="px-5 py-2.5 rounded-xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
+            <button onclick="handleSaveMemberNickname('${u.id}')" class="btn-interactive px-5 py-2.5 rounded-xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
               Simpan Julukan
             </button>
           </div>
@@ -1516,17 +1878,17 @@
       if (val) {
         db.nicknames[currentUser.id][targetId] = val;
         if (sb) await sb.from('zerava_nicknames').upsert([{ owner_id: currentUser.id, target_id: targetId, nickname: val }]);
-        showCenterPopup('Julukan Disimpan', `Nama julukan berhasil diubah menjadi <b>"${val}"</b> di kontakmu.`);
+        showTopPopup('Julukan Disimpan', `Nama julukan berhasil diubah menjadi <b>"${val}"</b> di kontakmu.`);
       } else {
         delete db.nicknames[currentUser.id][targetId];
         if (sb) await sb.from('zerava_nicknames').delete().match({ owner_id: currentUser.id, target_id: targetId });
-        showCenterPopup('Julukan Dihapus', 'Kembali menggunakan nama asli member.');
+        showTopPopup('Julukan Dihapus', 'Kembali menggunakan nama asli member.');
       }
       saveDbLocal();
       renderMemberProfilePage();
     }
 
-    // 12. HALAMAN BUAT GRUP & HALAMAN INFO GRUP
+    // ---------------- BUAT GRUP, INFO GRUP & HAPUS GRUP (REVISI #5) ----------------
     function renderCreateGroupPage() {
       const list = document.getElementById('createGroupMembersList');
       list.innerHTML = db.users.filter(u => u.id !== currentUser.id).map(u => `
@@ -1562,8 +1924,9 @@
       saveDbLocal();
       if (sb) await sb.from('zerava_groups').upsert([newGrp]);
 
+      await createAndBroadcastNotification('chat', 'Grup Baru Dibuat', `${currentUser.name} membuat grup "${name}"`, 'chat');
       openChatRoom('group', newGrp.id);
-      showCenterPopup('Grup Berhasil Dibuat', `Grup <b>${name}</b> telah siap digunakan secara online.`);
+      showTopPopup('Grup Berhasil Dibuat', `Grup <b>${name}</b> telah siap digunakan.`);
     }
 
     function renderGroupInfoPage() {
@@ -1571,20 +1934,27 @@
       const box = document.getElementById('groupInfoPageContainer');
 
       box.innerHTML = `
-        <div class="flex flex-col sm:flex-row items-center gap-4 pb-5 border-b border-slate-200 dark:border-zborder">
-          <img src="${g.avatar}" class="w-20 h-20 rounded-3xl object-cover border border-zbeige" />
-          <div class="text-center sm:text-left flex-1">
-            <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">${g.name}</h2>
-            <p class="text-xs text-slate-500 dark:text-gray-400">${(g.members || []).length} Member di dalam grup ini</p>
-            <label class="inline-block mt-2 text-xs font-bold text-zteal dark:text-zbeige underline cursor-pointer">
-              Ganti Foto Profil Grup
-              <input type="file" accept="image/*" class="hidden" onchange="handleChangeGroupAvatar(event, '${g.id}')" />
-            </label>
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-5 border-b border-slate-200 dark:border-zborder">
+          <div class="flex flex-col sm:flex-row items-center gap-4">
+            <img src="${g.avatar}" class="w-20 h-20 rounded-3xl object-cover border border-zbeige" />
+            <div class="text-center sm:text-left">
+              <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">${g.name}</h2>
+              <p class="text-xs text-slate-500 dark:text-gray-400">${(g.members || []).length} Member di dalam grup ini</p>
+              <label class="inline-block mt-2 text-xs font-bold text-zteal dark:text-zbeige underline cursor-pointer">
+                Ganti Foto Profil Grup
+                <input type="file" accept="image/*" class="hidden" onchange="handleChangeGroupAvatar(event, '${g.id}')" />
+              </label>
+            </div>
           </div>
+          ${g.id !== 'g_main' ? `
+            <button onclick="confirmDeleteGroup('${g.id}', '${g.name}')" class="btn-interactive px-4 py-2.5 rounded-2xl bg-red-500/15 text-red-500 font-extrabold text-xs">
+              <i class="fa-solid fa-trash-can mr-1.5"></i> Hapus Grup
+            </button>
+          ` : ''}
         </div>
 
         <div class="space-y-2">
-          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Daftar Anggota Grup (Klik Foto/Nama untuk ke Halaman Profilnya)</h3>
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Daftar Anggota Grup</h3>
           <div class="divide-y divide-slate-100 dark:divide-zborder">
             ${(g.members || []).map(uid => {
               const u = db.users.find(x => x.id === uid);
@@ -1607,6 +1977,20 @@
       `;
     }
 
+    function confirmDeleteGroup(groupId, groupName) {
+      openConfirmDialog('Hapus Grup?', `Apakah kamu yakin ingin menghapus grup <b>"${groupName}"</b> beserta seluruh obrolannya?`, async () => {
+        db.groups = db.groups.filter(g => g.id !== groupId);
+        db.messages = db.messages.filter(m => m.roomId !== groupId);
+        saveDbLocal();
+        if (sb) {
+          await sb.from('zerava_groups').delete().eq('id', groupId);
+          await sb.from('zerava_messages').delete().eq('room_id', groupId);
+        }
+        navigateTo('chat');
+        showTopPopup('Grup Dihapus', `Grup <b>${groupName}</b> telah dihapus.`, 'fa-trash-can');
+      });
+    }
+
     async function handleChangeGroupAvatar(e, groupId) {
       const f = e.target.files[0];
       if (!f || !checkFileMax15MB(e.target)) return;
@@ -1617,40 +2001,53 @@
         saveDbLocal();
         if (sb) await sb.from('zerava_groups').update({ avatar: cloudUrl }).eq('id', groupId);
         renderGroupInfoPage();
+        showTopPopup('Foto Grup Diperbarui', 'Foto profil grup berhasil disimpan.');
       }
     }
 
-    // 13. PRODUCTION FILM & TANGGAL KALENDER RESMI
+    // ---------------- 3. PRODUCTION FILM & FITUR HAPUS PROJECT / ITEM (REVISI #5) ----------------
     function renderProductionList() {
       const q = (document.getElementById('projSearchInput')?.value || '').toLowerCase();
       const grid = document.getElementById('productionProjectsGrid');
 
       grid.innerHTML = db.projects.filter(p => p.title.toLowerCase().includes(q)).map(p => `
-        <div onclick="openProjectDetailPage('${p.id}')" class="cursor-pointer bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl overflow-hidden shadow-sm hover:border-zteal dark:hover:border-zbeige transition">
-          <div class="h-44 relative">
-            <img src="${p.thumbnail}" class="w-full h-full object-cover" />
-            <span class="absolute top-3 right-3 px-3 py-1 rounded-full text-[11px] font-extrabold bg-zteal dark:bg-zbeige text-white dark:text-zdark">
-              ${p.status}
-            </span>
-          </div>
-          <div class="p-5 space-y-3">
-            <div>
-              <h3 class="font-extrabold text-base text-slate-900 dark:text-white">${p.title}</h3>
-              <p class="text-xs text-slate-500 dark:text-gray-400 line-clamp-2 mt-1">${p.desc}</p>
+        <div class="card-interactive bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl overflow-hidden shadow-sm hover:border-zteal dark:hover:border-zbeige flex flex-col justify-between">
+          <div onclick="openProjectDetailPage('${p.id}')" class="cursor-pointer">
+            <div class="h-44 relative">
+              <img src="${p.thumbnail}" class="w-full h-full object-cover" />
+              <span class="absolute top-3 left-3 px-3 py-1 rounded-full text-[11px] font-extrabold bg-zteal dark:bg-zbeige text-white dark:text-zdark">
+                ${p.status}
+              </span>
             </div>
-            <div class="pt-3 border-t border-slate-100 dark:border-zborder text-xs space-y-1">
-              <div class="flex justify-between">
-                <span class="text-slate-400">Tanggal Produksi:</span>
-                <span class="font-bold text-slate-800 dark:text-white">${formatIndoDate(p.startDate)} – ${formatIndoDate(p.endDate)}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-slate-400">Tenggat Pengumpulan:</span>
-                <span class="font-bold text-zteal dark:text-zbeige">${formatIndoDate(p.deadline)}</span>
-              </div>
+            <div class="p-5 space-y-2">
+              <h3 class="font-extrabold text-base text-slate-900 dark:text-white">${p.title}</h3>
+              <p class="text-xs text-slate-500 dark:text-gray-400 line-clamp-2">${p.desc}</p>
+            </div>
+          </div>
+          <div class="px-5 pb-5 pt-3 border-t border-slate-100 dark:border-zborder text-xs space-y-2">
+            <div class="flex justify-between">
+              <span class="text-slate-400">Produksi:</span>
+              <span class="font-bold text-slate-800 dark:text-white">${formatIndoDate(p.startDate)} – ${formatIndoDate(p.endDate)}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">Deadline: <b class="text-zteal dark:text-zbeige">${formatIndoDate(p.deadline)}</b></span>
+              <button onclick="confirmDeleteProject('${p.id}', '${p.title.replace(/'/g, '')}')" title="Hapus Project" class="px-2.5 py-1.5 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white text-xs font-bold transition">
+                <i class="fa-solid fa-trash-can mr-1"></i> Hapus
+              </button>
             </div>
           </div>
         </div>
-      `).join('');
+      `).join('') || '<div class="text-xs text-slate-400 py-8 text-center col-span-2">Belum ada project film.</div>';
+    }
+
+    function confirmDeleteProject(projId, projTitle) {
+      openConfirmDialog('Hapus Project Film?', `Seluruh ide, naskah, shoot list, storyboard, dan dokumen di dalam project <b>"${projTitle}"</b> akan ikut terhapus.`, async () => {
+        db.projects = db.projects.filter(p => p.id !== projId);
+        saveDbLocal();
+        if (sb) await sb.from('zerava_projects').delete().eq('id', projId);
+        navigateTo('production');
+        showTopPopup('Project Dihapus', `Project <b>${projTitle}</b> telah dihapus.`, 'fa-trash-can');
+      });
     }
 
     async function handleSaveNewProject(e) {
@@ -1690,8 +2087,9 @@
         }]);
       }
 
+      await createAndBroadcastNotification('production', 'Project Film Baru!', `${currentUser.name} membuat project "${newProj.title}"`, 'production');
       openProjectDetailPage(newProj.id);
-      showCenterPopup('Project Ditambahkan', `Project <b>${newProj.title}</b> berhasil disimpan ke Cloud.`);
+      showTopPopup('Project Ditambahkan', `Project <b>${newProj.title}</b> berhasil disimpan.`);
     }
 
     function openProjectDetailPage(projId) {
@@ -1716,7 +2114,12 @@
           <div class="flex items-center gap-4">
             <img src="${p.thumbnail}" class="w-20 h-20 rounded-2xl object-cover shrink-0" />
             <div>
-              <span class="px-2.5 py-0.5 rounded-full bg-zteal/15 dark:bg-zbeige/20 text-zteal dark:text-zbeige text-[11px] font-bold">${p.status}</span>
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full bg-zteal/15 dark:bg-zbeige/20 text-zteal dark:text-zbeige text-[11px] font-bold">${p.status}</span>
+                <button onclick="confirmDeleteProject('${p.id}', '${p.title.replace(/'/g, '')}')" class="text-xs font-bold text-red-500 hover:underline">
+                  <i class="fa-solid fa-trash-can mr-1"></i>Hapus Project
+                </button>
+              </div>
               <h2 class="text-lg font-extrabold text-slate-900 dark:text-white mt-1">${p.title}</h2>
               <p class="text-xs text-slate-500 dark:text-gray-400">${p.desc}</p>
             </div>
@@ -1751,7 +2154,7 @@
       p[field] = value;
       saveDbLocal();
       await saveProjectToSupabase(p);
-      showCenterPopup('Tanggal Diperbarui', `Jadwal berhasil diubah menjadi <b>${formatIndoDate(value)}</b>.`);
+      showTopPopup('Tanggal Diperbarui', `Jadwal berhasil diubah menjadi <b>${formatIndoDate(value)}</b>.`);
     }
 
     function selectProjSubFeature(feat) {
@@ -1759,8 +2162,8 @@
       ['ide', 'naskah', 'shootlist', 'storyboard', 'dokumen'].forEach(f => {
         const btn = document.getElementById(`subFeat-${f}`);
         btn.className = (f === feat)
-          ? 'px-4 py-2.5 rounded-2xl text-xs font-extrabold bg-zteal dark:bg-zbeige text-white dark:text-zdark whitespace-nowrap'
-          : 'px-4 py-2.5 rounded-2xl text-xs font-extrabold bg-white dark:bg-zcard border border-slate-200 dark:border-zborder text-slate-500 dark:text-gray-400 whitespace-nowrap';
+          ? 'btn-interactive px-4 py-2.5 rounded-2xl text-xs font-extrabold bg-zteal dark:bg-zbeige text-white dark:text-zdark whitespace-nowrap'
+          : 'btn-interactive px-4 py-2.5 rounded-2xl text-xs font-extrabold bg-white dark:bg-zcard border border-slate-200 dark:border-zborder text-slate-500 dark:text-gray-400 whitespace-nowrap';
       });
 
       const p = db.projects.find(x => x.id === currentProjectId);
@@ -1774,7 +2177,7 @@
                 <h3 class="font-extrabold text-sm text-slate-900 dark:text-white">1. Ide Cerita & Voting</h3>
                 <p class="text-xs text-slate-500 dark:text-gray-400">Berikan Like untuk memilih ide cerita yang akan diproduksi</p>
               </div>
-              <button onclick="openProjectAddFormPage('ide')" class="px-4 py-2 rounded-xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
+              <button onclick="openProjectAddFormPage('ide')" class="btn-interactive px-4 py-2 rounded-xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
                 <i class="fa-solid fa-plus mr-1"></i> Tambah Ide
               </button>
             </div>
@@ -1783,14 +2186,19 @@
                 const liked = idObj.likes.includes(currentUser.id);
                 return `
                   <div class="p-4 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder flex items-start justify-between gap-4">
-                    <div class="space-y-1">
+                    <div class="space-y-1 flex-1">
                       <h4 class="font-bold text-sm text-slate-900 dark:text-white">${idObj.title}</h4>
                       <p class="text-xs text-slate-600 dark:text-gray-300 leading-relaxed">${idObj.content}</p>
                       <div class="text-[11px] text-slate-400 pt-1">Oleh: ${getMemberDisplayName(idObj.authorId)}</div>
                     </div>
-                    <button onclick="toggleProjectIdeaLike('${idObj.id}')" class="px-3.5 py-2 rounded-xl border ${liked ? 'bg-red-500/20 border-red-500 text-red-500' : 'border-slate-300 dark:border-zborder text-slate-500'} font-bold text-xs flex items-center gap-1.5">
-                      <i class="fa-solid fa-heart"></i> <span>${idObj.likes.length}</span>
-                    </button>
+                    <div class="flex items-center gap-2 shrink-0">
+                      <button onclick="toggleProjectIdeaLike('${idObj.id}')" class="animate-heart px-3.5 py-2 rounded-xl border ${liked ? 'bg-red-500/20 border-red-500 text-red-500' : 'border-slate-300 dark:border-zborder text-slate-500'} font-bold text-xs flex items-center gap-1.5">
+                        <i class="fa-solid fa-heart"></i> <span>${idObj.likes.length}</span>
+                      </button>
+                      <button onclick="confirmDeleteProjectItem('ideas', '${idObj.id}', '${idObj.title.replace(/'/g, '')}')" title="Hapus Ide" class="w-9 h-9 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white text-xs flex items-center justify-center transition">
+                        <i class="fa-solid fa-trash-can"></i>
+                      </button>
+                    </div>
                   </div>
                 `;
               }).join('') || '<div class="text-xs text-slate-400 text-center py-6">Belum ada ide yang ditambahkan.</div>'}
@@ -1811,7 +2219,7 @@
                 <div class="text-xs font-extrabold text-slate-900 dark:text-white">Template Shoot List Resmi (Google Docs)</div>
                 <div class="text-[11px] text-slate-500 dark:text-gray-300">Buka dokumen template ini, isi shoot list, lalu upload hasilnya.</div>
               </div>
-              <a href="${p.shootListTemplateUrl}" target="_blank" class="px-4 py-2 rounded-xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs shrink-0">
+              <a href="${p.shootListTemplateUrl}" target="_blank" class="btn-interactive px-4 py-2 rounded-xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs shrink-0">
                 Buka Template Docs
               </a>
             </div>
@@ -1826,7 +2234,7 @@
                 <div class="text-xs font-extrabold text-slate-900 dark:text-white">Template Story Board Resmi (Canva Link)</div>
                 <div class="text-[11px] text-slate-500 dark:text-gray-300">${p.storyboardTemplateUrl}</div>
               </div>
-              <a href="${p.storyboardTemplateUrl}" target="_blank" class="px-4 py-2 rounded-xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs shrink-0">
+              <a href="${p.storyboardTemplateUrl}" target="_blank" class="btn-interactive px-4 py-2 rounded-xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs shrink-0">
                 Buka Template Canva
               </a>
             </div>
@@ -1841,7 +2249,7 @@
         <div class="space-y-4">
           <div class="flex items-center justify-between">
             <h3 class="font-extrabold text-sm text-slate-900 dark:text-white">${labels.title}</h3>
-            <button onclick="openProjectAddFormPage('${feat}')" class="px-4 py-2 rounded-xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
+            <button onclick="openProjectAddFormPage('${feat}')" class="btn-interactive px-4 py-2 rounded-xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
               <i class="fa-solid fa-plus mr-1"></i> ${labels.btn}
             </button>
           </div>
@@ -1849,18 +2257,35 @@
           <div class="space-y-2.5">
             ${list.map(item => `
               <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder flex items-center justify-between gap-3">
-                <div class="truncate">
+                <div class="truncate flex-1">
                   <div class="text-xs font-bold text-slate-900 dark:text-white truncate">${item.name} <span class="text-slate-400 font-normal">(${item.size})</span></div>
                   <div class="text-[11px] text-slate-400">Di-upload oleh ${getMemberDisplayName(item.uploaderId)}</div>
                 </div>
-                <a href="${item.url}" target="_blank" download="${item.name}" class="px-3.5 py-2 rounded-xl bg-white dark:bg-zcard border border-slate-200 dark:border-zborder text-xs font-bold text-zteal dark:text-zbeige shrink-0">
-                  Buka File
-                </a>
+                <div class="flex items-center gap-2 shrink-0">
+                  <a href="${item.url}" target="_blank" download="${item.name}" class="btn-interactive px-3.5 py-2 rounded-xl bg-white dark:bg-zcard border border-slate-200 dark:border-zborder text-xs font-bold text-zteal dark:text-zbeige">
+                    Buka File
+                  </a>
+                  <button onclick="confirmDeleteProjectItem('${feat}', '${item.id}', '${item.name.replace(/'/g, '')}')" title="Hapus Item" class="w-9 h-9 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white text-xs flex items-center justify-center transition">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
               </div>
             `).join('') || '<div class="text-xs text-slate-400 text-center py-6">Belum ada file yang di-upload.</div>'}
           </div>
         </div>
       `;
+    }
+
+    function confirmDeleteProjectItem(featKey, itemId, itemName) {
+      openConfirmDialog('Hapus Item Project?', `Apakah kamu yakin ingin menghapus <b>"${itemName}"</b> dari project ini?`, async () => {
+        const p = db.projects.find(x => x.id === currentProjectId);
+        if (!p) return;
+        p[featKey] = (p[featKey] || []).filter(x => x.id !== itemId);
+        saveDbLocal();
+        await saveProjectToSupabase(p);
+        selectProjSubFeature(currentSubFeature);
+        showTopPopup('Item Dihapus', `<b>${itemName}</b> telah dihapus dari project.`, 'fa-trash-can');
+      });
     }
 
     async function toggleProjectIdeaLike(ideaId) {
@@ -1893,7 +2318,7 @@
               <textarea id="newIdeaBody" rows="4" required placeholder="Tuliskan konsep dan garis besar cerita..."
                 class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs"></textarea>
             </div>
-            <button type="submit" class="w-full py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
+            <button type="submit" class="btn-interactive w-full py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
               Simpan Ide ke Project
             </button>
           </form>
@@ -1918,7 +2343,7 @@
               <input id="newProjFileUrl" type="url" placeholder="https://docs.google.com/..."
                 class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs" />
             </div>
-            <button type="submit" class="w-full py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
+            <button type="submit" class="btn-interactive w-full py-3 rounded-2xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
               Upload Sekarang
             </button>
           </form>
@@ -1930,17 +2355,19 @@
     async function handleSaveProjectIdea(e) {
       e.preventDefault();
       const p = db.projects.find(x => x.id === currentProjectId);
+      const title = document.getElementById('newIdeaTitle').value.trim();
       p.ideas.unshift({
         id: 'id_' + Date.now(),
-        title: document.getElementById('newIdeaTitle').value.trim(),
+        title,
         content: document.getElementById('newIdeaBody').value.trim(),
         authorId: currentUser.id,
         likes: [currentUser.id]
       });
       saveDbLocal();
       await saveProjectToSupabase(p);
+      await createAndBroadcastNotification('production', `Ide Baru di ${p.title}`, `${currentUser.name} mengusulkan ide "${title}"`, 'production');
       goBack();
-      showCenterPopup('Ide Berhasil Disimpan', 'Ide ceritamu sudah tampil secara online dan siap di-vote oleh member lain.');
+      showTopPopup('Ide Berhasil Disimpan', 'Ide ceritamu sudah tampil dan tercatat di Notifikasi.');
     }
 
     async function handleSaveProjectFile(e, featKey) {
@@ -1952,7 +2379,7 @@
 
       if (fileIn.files[0] && !checkFileMax15MB(fileIn, 'newProjFileUrl')) return;
       if (!fileIn.files[0] && !linkIn) {
-        showCenterPopup('File / Link Kosong', 'Silakan pilih file (maks 15 MB) atau isi kolom Link.', 'fa-circle-exclamation');
+        showTopPopup('File / Link Kosong', 'Silakan pilih file (maks 15 MB) atau isi kolom Link.', 'fa-circle-exclamation');
         return;
       }
 
@@ -1972,18 +2399,19 @@
 
       saveDbLocal();
       await saveProjectToSupabase(p);
+      await createAndBroadcastNotification('production', `Update ${featKey.toUpperCase()} Project`, `${currentUser.name} meng-upload "${name}" di ${p.title}`, 'production');
       goBack();
-      showCenterPopup('Berhasil Di-upload', `Dokumen <b>${name}</b> telah tersimpan ke Cloud.`);
+      showTopPopup('Berhasil Di-upload', `Dokumen <b>${name}</b> telah tersimpan.`);
     }
 
-    // 14. ZERAVA CLASS
+    // ---------------- 4. ZERAVA CLASS (+ FITUR HAPUS MATERI & FILE - REVISI #5) ----------------
     function renderClassList() {
       const q = (document.getElementById('classSearchIn')?.value || '').toLowerCase();
       const grid = document.getElementById('classGridContainer');
 
       grid.innerHTML = db.classMaterials.filter(m => m.title.toLowerCase().includes(q)).map(m => `
-        <div onclick="openMaterialDetailPage('${m.id}')" class="cursor-pointer bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl overflow-hidden shadow-sm hover:border-zteal dark:hover:border-zbeige transition flex flex-col justify-between">
-          <div>
+        <div class="card-interactive bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl overflow-hidden shadow-sm hover:border-zteal dark:hover:border-zbeige flex flex-col justify-between">
+          <div onclick="openMaterialDetailPage('${m.id}')" class="cursor-pointer">
             <img src="${m.thumbnail}" class="w-full h-44 object-cover" />
             <div class="p-5 space-y-1.5">
               <span class="text-[10px] font-bold text-zteal dark:text-zbeige">Oleh ${getMemberDisplayName(m.uploaderId)}</span>
@@ -1991,13 +2419,26 @@
               <p class="text-xs text-slate-500 dark:text-gray-400 line-clamp-2">${m.desc}</p>
             </div>
           </div>
-          <div class="px-5 pb-5">
-            <div class="w-full py-2.5 rounded-2xl bg-slate-100 dark:bg-zdark text-center text-xs font-extrabold text-zteal dark:text-zbeige">
-              Buka Halaman Materi
-            </div>
+          <div class="px-5 pb-5 flex items-center gap-2">
+            <button onclick="openMaterialDetailPage('${m.id}')" class="btn-interactive flex-1 py-2.5 rounded-2xl bg-slate-100 dark:bg-zdark text-center text-xs font-extrabold text-zteal dark:text-zbeige">
+              Buka Materi
+            </button>
+            <button onclick="confirmDeleteClassMaterial('${m.id}', '${m.title.replace(/'/g, '')}')" title="Hapus Materi" class="btn-interactive w-10 h-10 rounded-2xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white text-xs flex items-center justify-center transition">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
           </div>
         </div>
-      `).join('');
+      `).join('') || '<div class="text-xs text-slate-400 py-8 text-center col-span-2">Belum ada materi di Zerava Class.</div>';
+    }
+
+    function confirmDeleteClassMaterial(matId, matTitle) {
+      openConfirmDialog('Hapus Materi Zerava Class?', `Apakah kamu yakin ingin menghapus materi <b>"${matTitle}"</b> beserta filenya?`, async () => {
+        db.classMaterials = db.classMaterials.filter(m => m.id !== matId);
+        saveDbLocal();
+        if (sb) await sb.from('zerava_class').delete().eq('id', matId);
+        navigateTo('class');
+        showTopPopup('Materi Dihapus', `Materi <b>${matTitle}</b> telah dihapus.`, 'fa-trash-can');
+      });
     }
 
     function openMaterialDetailPage(matId) {
@@ -2012,26 +2453,52 @@
       document.getElementById('classDetailPageContent').innerHTML = `
         <img src="${m.thumbnail}" class="w-full h-56 sm:h-72 object-cover" />
         <div class="p-6 space-y-5">
-          <div class="space-y-1">
-            <span class="text-xs font-bold text-zteal dark:text-zbeige">Dibagikan oleh ${getMemberDisplayName(m.uploaderId)}</span>
-            <h1 class="text-2xl font-extrabold text-slate-900 dark:text-white">${m.title}</h1>
+          <div class="flex items-start justify-between gap-3">
+            <div class="space-y-1">
+              <span class="text-xs font-bold text-zteal dark:text-zbeige">Dibagikan oleh ${getMemberDisplayName(m.uploaderId)}</span>
+              <h1 class="text-2xl font-extrabold text-slate-900 dark:text-white">${m.title}</h1>
+            </div>
+            <button onclick="confirmDeleteClassMaterial('${m.id}', '${m.title.replace(/'/g, '')}')" class="btn-interactive px-3.5 py-2 rounded-xl bg-red-500/15 text-red-500 font-bold text-xs shrink-0">
+              <i class="fa-solid fa-trash-can mr-1"></i> Hapus Materi
+            </button>
           </div>
           <p class="text-xs sm:text-sm text-slate-600 dark:text-gray-300 leading-relaxed">${m.desc}</p>
 
-          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder flex items-center justify-between gap-4">
-            <div class="flex items-center gap-3">
-              <i class="fa-solid fa-file-arrow-down text-xl text-zteal dark:text-zbeige"></i>
-              <div>
-                <div class="text-xs font-extrabold text-slate-900 dark:text-white">${m.fileName}</div>
-                <div class="text-[11px] text-slate-400">${m.fileSize}</div>
+          ${m.fileName ? `
+            <div class="p-4 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder flex items-center justify-between gap-4">
+              <div class="flex items-center gap-3 min-w-0">
+                <i class="fa-solid fa-file-arrow-down text-xl text-zteal dark:text-zbeige"></i>
+                <div class="truncate">
+                  <div class="text-xs font-extrabold text-slate-900 dark:text-white truncate">${m.fileName}</div>
+                  <div class="text-[11px] text-slate-400">${m.fileSize}</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <a href="${m.url}" target="_blank" download="${m.fileName}" class="btn-interactive px-4 py-2 rounded-xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
+                  Buka / Unduh
+                </a>
+                <button onclick="confirmRemoveFileInsideMaterial('${m.id}')" title="Hapus Lampiran File" class="w-9 h-9 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white text-xs flex items-center justify-center">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
               </div>
             </div>
-            <a href="${m.url}" target="_blank" download="${m.fileName}" class="px-5 py-2.5 rounded-xl bg-zteal dark:bg-zbeige text-white dark:text-zdark font-extrabold text-xs">
-              Buka / Unduh Materi
-            </a>
-          </div>
+          ` : '<div class="text-xs text-slate-400 italic">Lampiran file pada materi ini telah dihapus.</div>'}
         </div>
       `;
+    }
+
+    function confirmRemoveFileInsideMaterial(matId) {
+      openConfirmDialog('Hapus Lampiran File?', 'Lampiran dokumen/tautan di dalam materi ini akan dihapus.', async () => {
+        const m = db.classMaterials.find(x => x.id === matId);
+        if (!m) return;
+        m.fileName = '';
+        m.fileSize = '';
+        m.url = '';
+        saveDbLocal();
+        if (sb) await sb.from('zerava_class').update({ file_name: '', file_size: '', url: '' }).eq('id', matId);
+        renderClassDetailPage();
+        showTopPopup('Lampiran Dihapus', 'File di dalam materi berhasil dihapus.', 'fa-trash-can');
+      });
     }
 
     async function handleSaveNewClassMaterial(e) {
@@ -2065,17 +2532,7 @@
         uploaderId: currentUser.id
       };
 
-      const newNotif = {
-        id: 'n_' + Date.now(),
-        type: 'class',
-        title: 'Materi Baru Ditambahkan!',
-        body: `${currentUser.name} membagikan materi "${newMat.title}"`,
-        time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-        page: 'class'
-      };
-
       db.classMaterials.unshift(newMat);
-      db.notifications.unshift(newNotif);
       saveDbLocal();
 
       if (sb) {
@@ -2083,34 +2540,39 @@
           id: newMat.id, title: newMat.title, description: newMat.desc, thumbnail: newMat.thumbnail,
           file_name: newMat.fileName, file_size: newMat.fileSize, url: newMat.url, uploader_id: newMat.uploaderId
         }]);
-        await sb.from('zerava_notifications').insert([newNotif]);
       }
 
-      fireSystemNotification(newNotif.title, newNotif.body);
+      await createAndBroadcastNotification('class', 'Materi Baru di Zerava Class!', `${currentUser.name} membagikan materi "${newMat.title}"`, 'class');
+      fireSystemNotification('Materi Baru di Zerava Class!', `${currentUser.name} membagikan "${newMat.title}"`, 'class');
       openMaterialDetailPage(newMat.id);
-      showCenterPopup('Materi Berhasil Di-upload', `Materi <b>${newMat.title}</b> sudah tersimpan di Cloud dan tampil di Zerava Class.`);
+      showTopPopup('Materi Berhasil Di-upload', `Materi <b>${newMat.title}</b> sudah tampil di Zerava Class & Notifikasi.`);
     }
 
-    // 15. NOTIFIKASI LATAR BELAKANG
+    // ---------------- 5. NOTIFIKASI LUAR WEB (PWA SERVICE WORKER - REVISI #1 & #2) ----------------
     let swRegistration = null;
 
-    async function registerInlineServiceWorker() {
+    async function registerPwaServiceWorker() {
       if (!('serviceWorker' in navigator)) return;
       try {
-        const swCode = `
-          self.addEventListener('install', e => self.skipWaiting());
-          self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
-          self.addEventListener('notificationclick', e => {
-            e.notification.close();
-            e.waitUntil(clients.matchAll({ type: 'window' }).then(list => {
-              if (list.length > 0) return list[0].focus();
-              return clients.openWindow('/');
-            }));
-          });
-        `;
-        const blob = new Blob([swCode], { type: 'application/javascript' });
-        swRegistration = await navigator.serviceWorker.register(URL.createObjectURL(blob));
-      } catch (err) {}
+        swRegistration = await navigator.serviceWorker.register('/sw.js');
+      } catch (err) {
+        // Fallback jika file /sw.js belum di-upload
+        try {
+          const swCode = `
+            self.addEventListener('install', e => self.skipWaiting());
+            self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+            self.addEventListener('notificationclick', e => {
+              e.notification.close();
+              e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+                if (list.length > 0) return list[0].focus();
+                return clients.openWindow('/');
+              }));
+            });
+          `;
+          const blob = new Blob([swCode], { type: 'application/javascript' });
+          swRegistration = await navigator.serviceWorker.register(URL.createObjectURL(blob));
+        } catch (e2) {}
+      }
     }
 
     function playNotificationSound() {
@@ -2120,8 +2582,8 @@
         const gain = ctx.createGain();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(880, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.25);
-        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(520, ctx.currentTime + 0.25);
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
         osc.connect(gain);
         gain.connect(ctx.destination);
@@ -2130,41 +2592,58 @@
       } catch (e) {}
     }
 
-    async function fireSystemNotification(title, body) {
+    async function fireSystemNotification(title, body, targetPage = 'notifications') {
       playNotificationSound();
       if (!('Notification' in window)) return;
       if (Notification.permission === 'granted') {
+        const options = {
+          body,
+          icon: 'Zerava (putih).png',
+          badge: 'Zerava (putih).png',
+          vibrate: [200, 100, 200],
+          tag: 'zerava-notif-' + Date.now(),
+          renotify: true,
+          data: { page: targetPage }
+        };
         try {
-          if (swRegistration && swRegistration.showNotification) {
-            await swRegistration.showNotification(title, { body, vibrate: [200, 100, 200] });
+          const reg = swRegistration || (await navigator.serviceWorker.getRegistration());
+          if (reg && reg.showNotification) {
+            await reg.showNotification(title, options);
             return;
           }
         } catch (e) {}
-        try { new Notification(title, { body }); } catch (e) {}
+        try { new Notification(title, options); } catch (e) {}
       }
     }
 
     async function setupAndTestPushNotification() {
       if (!('Notification' in window)) {
-        showCenterPopup('Tidak Didukung', 'Browser ini tidak memiliki fitur Web Notification.', 'fa-circle-exclamation');
+        showTopPopup('Tidak Didukung', 'Browser perangkat ini tidak mendukung Web Notification.', 'fa-circle-exclamation');
         return;
       }
 
       let perm = Notification.permission;
-      if (perm === 'default') {
+      if (perm !== 'granted') {
         perm = await Notification.requestPermission();
       }
 
       renderNotificationsPage();
 
       if (perm === 'granted') {
-        showCenterPopup(
-          'Notifikasi Latar Belakang Aktif!',
-          'Begitu ada member yang mengirim chat atau meng-upload materi baru, notifikasi akan langsung berbunyi otomatis di perangkatmu.',
+        showTopPopup(
+          'Tes Notif Luar Web Dimulai!',
+          'Sekarang <b>keluar ke layar utama HP atau pindah tab selama 3 detik</b>—notifikasi akan muncul di bar atas HP-mu!',
           'fa-bell'
         );
+        setTimeout(async () => {
+          await createAndBroadcastNotification('chat', 'Zerava Filmboard • Pesan Masuk', `${currentUser.name}, notifikasi latar belakangmu sudah aktif seperti WhatsApp!`, 'notifications');
+          await fireSystemNotification('Zerava Filmboard • Pesan Masuk', `${currentUser.name}, notifikasi latar belakangmu sudah aktif seperti WhatsApp!`, 'notifications');
+          if (!document.getElementById('page-notifications').classList.contains('hidden')) {
+            renderNotificationsPage();
+          }
+        }, 3000);
       } else {
-        showCenterPopup('Izin Diblokir Browser', 'Silakan ubah pengaturan Notification di ikon gembok sebelah alamat web menjadi Allow/Izinkan.', 'fa-lock');
+        showTopPopup('Izin Diblokir Browser', 'Ketuk ikon gembok di kiri alamat web atas, lalu ubah Notifications menjadi Allow/Izinkan.', 'fa-lock');
       }
     }
 
@@ -2173,28 +2652,53 @@
       if ('Notification' in window) {
         const p = Notification.permission;
         sub.innerHTML = p === 'granted'
-          ? '<span class="text-emerald-500 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>Izin Notifikasi Aktif (Terhubung ke Realtime Supabase)</span>'
-          : '<span class="text-amber-500 font-bold">Klik tombol di samping untuk mengaktifkan notifikasi latar belakang</span>';
+          ? '<span class="text-emerald-500 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>Izin Notifikasi Aktif (Mencatat otomatis chat, materi, & project)</span>'
+          : '<span class="text-amber-500 font-bold">Klik tombol "Aktifkan & Tes Notif Luar Web" di samping</span>';
       }
 
       const box = document.getElementById('notifItemsContainer');
       box.innerHTML = db.notifications.map(n => `
-        <div onclick="navigateTo('${n.page || 'chat'}')" class="p-4 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer">
-          <div class="flex items-center gap-3.5">
-            <div class="w-10 h-10 rounded-2xl bg-zteal/15 dark:bg-zbeige/20 text-zteal dark:text-zbeige flex items-center justify-center">
-              <i class="fa-solid ${n.type === 'class' ? 'fa-graduation-cap' : 'fa-comment-dots'}"></i>
+        <div class="p-4 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-white/5 transition">
+          <div onclick="navigateTo('${n.page || 'chat'}')" class="flex items-center gap-3.5 flex-1 min-w-0 cursor-pointer">
+            <div class="w-10 h-10 rounded-2xl bg-zteal/15 dark:bg-zbeige/20 text-zteal dark:text-zbeige flex items-center justify-center shrink-0">
+              <i class="fa-solid ${n.type === 'class' ? 'fa-graduation-cap' : n.type === 'production' ? 'fa-clapperboard' : 'fa-comment-dots'}"></i>
             </div>
-            <div>
-              <div class="text-xs font-extrabold text-slate-900 dark:text-white">${n.title}</div>
-              <div class="text-xs text-slate-500 dark:text-gray-400">${n.body}</div>
+            <div class="truncate">
+              <div class="text-xs font-extrabold text-slate-900 dark:text-white truncate">${n.title}</div>
+              <div class="text-xs text-slate-500 dark:text-gray-400 truncate">${n.body}</div>
             </div>
           </div>
-          <span class="text-[10px] text-slate-400 shrink-0">${n.time}</span>
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="text-[10px] text-slate-400">${n.time || ''}</span>
+            <button onclick="deleteSingleNotification('${n.id}')" class="w-7 h-7 rounded-lg text-slate-400 hover:text-red-500 flex items-center justify-center">
+              <i class="fa-solid fa-xmark text-xs"></i>
+            </button>
+          </div>
         </div>
-      `).join('');
+      `).join('') || '<div class="p-8 text-center text-xs text-slate-400">Belum ada riwayat notifikasi.</div>';
     }
 
-    // 16. MY PROFIL & ADMIN
+    async function deleteSingleNotification(notifId) {
+      db.notifications = db.notifications.filter(n => n.id !== notifId);
+      saveDbLocal();
+      updateGlobalBadges();
+      renderNotificationsPage();
+      if (sb) await sb.from('zerava_notifications').delete().eq('id', notifId);
+    }
+
+    function confirmClearAllNotifications() {
+      if (db.notifications.length === 0) return;
+      openConfirmDialog('Bersihkan Semua Notifikasi?', 'Seluruh daftar riwayat notifikasi akan dikosongkan.', async () => {
+        db.notifications = [];
+        saveDbLocal();
+        updateGlobalBadges();
+        renderNotificationsPage();
+        if (sb) await sb.from('zerava_notifications').delete().neq('id', '0');
+        showTopPopup('Notifikasi Dibersihkan', 'Daftar notifikasi telah dikosongkan.');
+      });
+    }
+
+    // ---------------- 6. MY PROFIL & ADMIN ----------------
     function renderMyProfilePage() {
       document.getElementById('myProfAvatarImg').src = currentUser.avatar;
       document.getElementById('myProfFullName').textContent = currentUser.name;
@@ -2214,7 +2718,7 @@
 
       const myFiles = [];
       db.classMaterials.filter(m => m.uploaderId === currentUser.id).forEach(m => {
-        myFiles.push({ title: m.title, type: 'Zerava Class' });
+        myFiles.push({ title: m.title, type: 'Zerava Class', action: () => confirmDeleteClassMaterial(m.id, m.title) });
       });
       db.projects.forEach(p => {
         ['naskah', 'shootlist', 'storyboard', 'dokumen'].forEach(k => {
@@ -2239,11 +2743,12 @@
       currentUser.avatar = cloudUrl;
       const idx = db.users.findIndex(u => u.id === currentUser.id);
       if (idx > -1) db.users[idx].avatar = cloudUrl;
-      localStorage.setItem('zerava_v3_user', JSON.stringify(currentUser));
+      localStorage.setItem('zerava_v4_user', JSON.stringify(currentUser));
+      saveAccountToDeviceHistory(currentUser);
       saveDbLocal();
       if (sb) await sb.from('zerava_users').update({ avatar: cloudUrl }).eq('id', currentUser.id);
       renderMyProfilePage();
-      showCenterPopup('Foto Profil Diperbarui', 'Foto profil barumu berhasil disimpan ke Cloud.');
+      showTopPopup('Foto Profil Diperbarui', 'Foto profil barumu berhasil disimpan.');
     }
 
     async function handleUpdateMyProfile(e) {
@@ -2254,7 +2759,8 @@
 
       const idx = db.users.findIndex(u => u.id === currentUser.id);
       if (idx > -1) db.users[idx] = { ...currentUser };
-      localStorage.setItem('zerava_v3_user', JSON.stringify(currentUser));
+      localStorage.setItem('zerava_v4_user', JSON.stringify(currentUser));
+      saveAccountToDeviceHistory(currentUser);
       saveDbLocal();
       if (sb) {
         await sb.from('zerava_users').update({
@@ -2262,36 +2768,50 @@
         }).eq('id', currentUser.id);
       }
       renderMyProfilePage();
-      showCenterPopup('Profil Disimpan', 'Data profilmu berhasil diperbarui secara online.');
+      showTopPopup('Profil Disimpan', 'Data profilmu berhasil diperbarui.');
     }
 
-    // 17. HALAMAN ADMIN (UNDANG EMAIL CALON MEMBER -> BUAT PASSWORD -> LOGIN)
+    // ---------------- 7. HALAMAN ADMIN ----------------
     function renderAdminPage() {
       const box = document.getElementById('adminInviteHistoryList');
-      box.innerHTML = db.invites.map(inv => `
+      box.innerHTML = db.invites.map((inv, idx) => `
         <div class="p-4 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div class="text-xs font-extrabold text-slate-900 dark:text-white">${inv.name} (${inv.email})</div>
             <div class="text-[11px] text-slate-400">${inv.divisi} • ${inv.role}</div>
           </div>
-          <button onclick="openSetPasswordFlow('${inv.email}')" class="px-4 py-2 rounded-xl bg-zpurple text-white font-bold text-xs shrink-0">
-            Buka Halaman Buat Password
-          </button>
+          <div class="flex items-center gap-2">
+            <button onclick="openSetPasswordFlow('${inv.email}')" class="btn-interactive px-3.5 py-2 rounded-xl bg-zpurple text-white font-bold text-xs">
+              Halaman Buat Password
+            </button>
+            <button onclick="confirmDeleteInvite('${inv.email}')" class="w-8 h-8 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white text-xs flex items-center justify-center">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
         </div>
       `).join('') || '<div class="text-xs text-slate-400">Belum ada undangan baru yang dikirim.</div>';
     }
 
-        async function handleAdminSendInvite(e) {
+    function confirmDeleteInvite(email) {
+      openConfirmDialog('Hapus Riwayat Undangan?', `Hapus riwayat undangan untuk <b>${email}</b>?`, async () => {
+        db.invites = db.invites.filter(i => i.email !== email);
+        saveDbLocal();
+        if (sb) await sb.from('zerava_invites').delete().eq('email', email);
+        renderAdminPage();
+        showTopPopup('Riwayat Dihapus', 'Data riwayat undangan telah dihapus.');
+      });
+    }
+
+    async function handleAdminSendInvite(e) {
       e.preventDefault();
       const email = document.getElementById('admInviteEmail').value.trim();
       const name = document.getElementById('admInviteName').value.trim();
       const divisi = document.getElementById('admInviteDivisi').value.trim();
       const role = document.getElementById('admInviteRole').value.trim();
 
-      const baseUrl = 'https://filmboard.zerava.web.id';
+      const baseUrl = window.location.origin;
       const inviteLink = `${baseUrl}?mode=set-password&email=${encodeURIComponent(email)}`;
 
-      // 1. Simpan dulu ke database Supabase
       if (!db.users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
         const newU = {
           id: 'u_' + Date.now(),
@@ -2318,7 +2838,6 @@
       saveDbLocal();
       if (sb) await sb.from('zerava_invites').insert([{ email, name, divisi, role }]);
 
-      // 2. Kirim email sungguhan lewat Resend (Vercel API)
       showLoading('Mengirim email via Resend...');
       try {
         const res = await fetch('/api/send-invite', {
@@ -2330,19 +2849,18 @@
         hideLoading();
 
         if (res.ok) {
-          showCenterPopup('Email Berhasil Terkirim!', `Link pembuatan password telah sukses dikirim ke Gmail: <b>${email}</b>.`);
+          showTopPopup('Email Berhasil Terkirim!', `Link pembuatan password telah dikirim ke Gmail: <b>${email}</b>.`);
         } else {
-          showCenterPopup('Gagal Mengirim Email', `Resend menolak pengiriman: ${result.error || 'Periksa API Key di Vercel.'}`, 'fa-triangle-exclamation');
+          showTopPopup('Gagal Mengirim Email', `Resend: ${result.error || 'Periksa RESEND_API_KEY di Vercel.'}`, 'fa-triangle-exclamation');
         }
       } catch (err) {
         hideLoading();
-        showCenterPopup('Error Koneksi API', `Gagal menghubungi server pengirim email: ${err.message}`, 'fa-triangle-exclamation');
+        showTopPopup('Tersimpan di Database', `Member terdaftar. Pastikan diakses dari domain Vercel agar email terkirim otomatis.`, 'fa-circle-info');
       }
 
       e.target.reset();
       renderAdminPage();
     }
-
 
     let targetSetPassEmail = '';
     function openSetPasswordFlow(email) {
@@ -2362,7 +2880,7 @@
       const p1 = document.getElementById('newPass1').value;
       const p2 = document.getElementById('newPass2').value;
       if (p1 !== p2) {
-        showCenterPopup('Password Tidak Sama', 'Pastikan kedua kolom password diisi sama persis.', 'fa-circle-xmark');
+        showTopPopup('Password Tidak Sama', 'Pastikan kedua kolom password diisi sama persis.', 'fa-circle-xmark');
         return;
       }
       const u = db.users.find(x => x.email.toLowerCase() === targetSetPassEmail.toLowerCase());
@@ -2374,6 +2892,7 @@
 
       document.getElementById('setPassForm').classList.add('hidden');
       document.getElementById('setPassDoneBox').classList.remove('hidden');
+      showTopPopup('Password Aktif!', 'Password barumu telah berhasil disimpan.');
     }
 
     function finishSetPasswordToLogin() {
