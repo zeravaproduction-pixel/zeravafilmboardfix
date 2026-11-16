@@ -358,6 +358,22 @@
           </p>
         </div>
 
+        <!-- ANNOUNCEMENT -->
+        <div id="homeAnnouncementSection" class="space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <div class="inline-flex items-center gap-1.5 text-xs font-extrabold text-amber-500">
+                <i class="fa-solid fa-bullhorn"></i> <span>Announcement</span>
+              </div>
+              <h2 class="text-base font-extrabold text-slate-900 dark:text-white">Pengumuman Terbaru</h2>
+            </div>
+            <button onclick="navigateTo('announcements')" class="text-xs font-bold text-zteal dark:text-zbeige hover:underline">
+              Lihat Semua <i class="fa-solid fa-arrow-right ml-1"></i>
+            </button>
+          </div>
+          <div id="homeAnnouncementList" class="space-y-3"></div>
+        </div>
+
         <!-- HIGHLIGHT 3 IDE TERPOPULER MINGGU INI (OPSI B) -->
         <div class="space-y-3">
           <div class="flex items-center justify-between gap-2">
@@ -778,6 +794,32 @@
           <i class="fa-solid fa-arrow-left"></i> Kembali
         </button>
         <div id="classDetailPageContent" class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl overflow-hidden shadow-lg"></div>
+      </section>
+
+      <!-- 4D. ANNOUNCEMENT PAGE -->
+      <section id="page-announcements" class="app-page hidden space-y-5">
+        <button onclick="goBack()" class="inline-flex items-center gap-2 text-xs font-bold text-zteal dark:text-zbeige">
+          <i class="fa-solid fa-arrow-left"></i> Kembali
+        </button>
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Pengumuman Zerava</h2>
+            <p class="text-xs text-slate-500 dark:text-gray-400">Info penting untuk seluruh member</p>
+          </div>
+          <button onclick="toggleAnnouncementForm()" class="zerava-btn-primary btn-interactive px-4 py-2.5 rounded-2xl font-extrabold text-xs">
+            <i class="fa-solid fa-plus mr-1"></i> Buat
+          </button>
+        </div>
+        <form id="annForm" onsubmit="handleSaveAnnouncement(event)" class="hidden bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl p-5 space-y-3">
+          <input id="annTitleIn" type="text" required placeholder="Judul pengumuman"
+            class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white" />
+          <textarea id="annContentIn" rows="4" required placeholder="Isi pengumuman..."
+            class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs text-slate-900 dark:text-white"></textarea>
+          <button type="submit" class="zerava-btn-primary btn-interactive w-full py-3 rounded-2xl font-extrabold text-xs">
+            <i class="fa-solid fa-bullhorn mr-1.5"></i> Kirim Pengumuman
+          </button>
+        </form>
+        <div id="annListContainer" class="space-y-3"></div>
       </section>
 
       <!-- 5. NOTIFICATIONS PAGE -->
@@ -1303,9 +1345,8 @@
     };
 
     let db = JSON.parse(localStorage.getItem('zerava_v4_db')) || defaultDatabase;
-    if (!db.ideaBank || !Array.isArray(db.ideaBank) || db.ideaBank.length === 0) {
-      db.ideaBank = defaultIdeaBank;
-    }
+    if (!Array.isArray(db.ideaBank)) db.ideaBank = defaultIdeaBank;
+    if (!Array.isArray(db.announcements)) db.announcements = [];
 
     let currentUser = JSON.parse(localStorage.getItem('zerava_v4_user')) || null;
     let currentChatFilter = 'all';
@@ -1342,7 +1383,7 @@
           shootlist_template_url: '',
           storyboard_template_url: '',
           ideas: db.ideaBank,
-          naskah: [],
+          naskah: db.announcements || [],
           shootlist: [],
           storyboard: [],
           dokumen: []
@@ -1716,15 +1757,16 @@
           const bankRow = pRes.data.find(r => r.id === BANK_IDE_ROW_ID);
           const realProjectRows = pRes.data.filter(r => r.id !== BANK_IDE_ROW_ID);
 
-          if (bankRow && Array.isArray(bankRow.ideas) && bankRow.ideas.length > 0) {
-            db.ideaBank = bankRow.ideas;
+          if (bankRow) {
+            if (Array.isArray(bankRow.ideas)) db.ideaBank = bankRow.ideas;
+            db.announcements = Array.isArray(bankRow.naskah) ? bankRow.naskah : [];
           }
 
           if (realProjectRows.length > 0) {
             db.projects = realProjectRows.map(r => {
               const pIdeas = r.ideas || [];
               // Gabungkan ide lama yang ada di project ke dalam Bank Ide Global agar tidak ada ide yang hilang
-              pIdeas.forEach(oldIdea => {
+              if (!bankRow) pIdeas.forEach(oldIdea => {
                 if (oldIdea && oldIdea.id && !db.ideaBank.some(b => b.id === oldIdea.id)) {
                   db.ideaBank.push({
                     ...oldIdea,
@@ -1852,6 +1894,7 @@
       if (topPage === 'class') renderClassList();
       if (topPage === 'notifications') renderNotificationsPage();
       if (topPage === 'admin') renderAdminPage();
+      if (topPage === 'announcements') renderAnnouncementsPage();
     }
 
     function checkFileMax15MB(inputEl, fallbackUrlId) {
@@ -1891,7 +1934,7 @@
 
     let activePageId = 'home';
 
-    function navigateTo(pageId, pushToHistory = true) {
+    function renderPage(pageId) {
       const prevEl = document.getElementById(`page-${activePageId}`);
       if (prevEl && activePageId !== pageId) {
         prevEl.classList.add('hidden');
@@ -1913,6 +1956,7 @@
 
       const rootTabMap = {
         'home': 'home',
+        'announcements': 'home',
         'chat': 'chat', 'chat-room': 'chat', 'create-group': 'chat', 'group-info': 'chat', 'member-profile': 'chat',
         'production': 'production', 'create-project': 'production', 'create-idea': 'production', 'project-detail': 'production', 'project-add-item': 'production',
         'class': 'class', 'create-class': 'class', 'class-detail': 'class',
@@ -1927,10 +1971,7 @@
         document.getElementById(`bnav-${activeRoot}`).className = 'bnav-item btn-interactive relative flex flex-col items-center justify-center py-1.5 rounded-2xl text-zteal dark:text-zbeige font-extrabold';
       }
 
-      if (pushToHistory && navStack[navStack.length - 1] !== pageId) {
-        navStack.push(pageId);
-        window.history.pushState({ pageId }, '', `#${pageId}`);
-      }
+      
 
       if (target) {
         target.classList.remove('hidden');
@@ -1957,28 +1998,112 @@
       else if (pageId === 'notifications') renderNotificationsPage();
       else if (pageId === 'profile') renderMyProfilePage();
       else if (pageId === 'admin') renderAdminPage();
+      else if (pageId === 'announcements') renderAnnouncementsPage();
+      else if (pageId === 'project-add-item' && !document.getElementById('newProjFileName') && currentProjectAddType) renderProjectAddForm(currentProjectAddType);
 
+      saveNavState();
       updateGlobalBadges();
       if (pageId !== 'chat-room') window.scrollTo({ top: 0, behavior: 'instant' });
     }
 
-    function goBack() {
-      if (navStack.length > 1) {
-        navStack.pop();
-        const prev = navStack[navStack.length - 1];
-        navigateTo(prev, false);
-      } else {
-        navigateTo('home', false);
+    const ROOT_PAGES = ['home', 'chat', 'production', 'class', 'profile', 'notifications', 'announcements'];
+    const NAV_KEY = 'zerava_nav_state';
+    let rewindCb = null;
+    let currentProjectAddType = '';
+
+    function navigateTo(pageId, pushToHistory = true) {
+      if (pushToHistory) {
+        if (ROOT_PAGES.includes(pageId)) {
+          goRootStack(pageId);
+        } else if (navStack[navStack.length - 1] !== pageId) {
+          navStack.push(pageId);
+          try { history.pushState({ zerava: 1 }, '', '#' + pageId); } catch (e) {}
+        }
+      }
+      renderPage(pageId);
+    }
+
+    function rewindHistory(steps, cb) {
+      rewindCb = cb;
+      history.go(-steps);
+      setTimeout(() => { if (rewindCb === cb) { rewindCb = null; cb(); } }, 600);
+    }
+
+    function goRootStack(pageId) {
+      const d = navStack.length;
+      const st = { zerava: 1 };
+      try {
+        if (pageId === 'home') {
+          if (d > 1) rewindHistory(d - 1, () => history.replaceState(st, '', '#home'));
+          navStack = ['home'];
+        } else {
+          if (d === 1) history.pushState(st, '', '#' + pageId);
+          else if (d === 2) history.replaceState(st, '', '#' + pageId);
+          else rewindHistory(d - 2, () => history.replaceState(st, '', '#' + pageId));
+          navStack = ['home', pageId];
+        }
+      } catch (e) {
+        navStack = pageId === 'home' ? ['home'] : ['home', pageId];
       }
     }
 
-    window.addEventListener('popstate', (event) => {
-      if (event.state && event.state.pageId) {
-        navigateTo(event.state.pageId, false);
-      } else if (currentUser) {
-        goBack();
+    function popStackAndRender() {
+      if (navStack.length > 1) {
+        navStack.pop();
+        renderPage(navStack[navStack.length - 1]);
       }
+    }
+
+    function goBack() {
+      if (navStack.length <= 1) { renderPage('home'); return; }
+      const before = navStack.length;
+      history.back();
+      setTimeout(() => { if (navStack.length === before) popStackAndRender(); }, 350);
+    }
+
+    window.addEventListener('popstate', () => {
+      if (rewindCb) { const cb = rewindCb; rewindCb = null; cb(); return; }
+      if (currentUser) popStackAndRender();
     });
+
+    function saveNavState() {
+      if (!currentUser) return;
+      try {
+        sessionStorage.setItem(NAV_KEY, JSON.stringify({
+          uid: currentUser.id, navStack, currentRoom, currentProjectId, currentSubFeature,
+          prodMainTab, currentViewedMemberId, currentViewedMaterialId, currentProjectAddType
+        }));
+      } catch (e) {}
+    }
+
+    function isNavTargetValid(p) {
+      if (p === 'project-detail') return db.projects.some(x => x.id === currentProjectId);
+      if (p === 'project-add-item') return db.projects.some(x => x.id === currentProjectId) && !!currentProjectAddType;
+      if (p === 'class-detail') return db.classMaterials.some(x => x.id === currentViewedMaterialId);
+      if (p === 'member-profile') return db.users.some(x => x.id === currentViewedMemberId);
+      if (p === 'chat-room' || p === 'group-info') {
+        return currentRoom.type === 'group' ? db.groups.some(x => x.id === currentRoom.id) : db.users.some(x => x.id === currentRoom.id);
+      }
+      if (p === 'admin') return !!currentUser.isAdmin;
+      return true;
+    }
+
+    function restoreNavState() {
+      try {
+        const s = JSON.parse(sessionStorage.getItem(NAV_KEY) || 'null');
+        if (!s || s.uid !== currentUser.id || !Array.isArray(s.navStack) || !s.navStack.length) return false;
+        navStack = s.navStack;
+        currentRoom = s.currentRoom || currentRoom;
+        currentProjectId = s.currentProjectId || currentProjectId;
+        currentSubFeature = s.currentSubFeature || currentSubFeature;
+        prodMainTab = s.prodMainTab || prodMainTab;
+        currentViewedMemberId = s.currentViewedMemberId;
+        currentViewedMaterialId = s.currentViewedMaterialId;
+        currentProjectAddType = s.currentProjectAddType || '';
+        while (navStack.length > 1 && !isNavTargetValid(navStack[navStack.length - 1])) navStack.pop();
+        return true;
+      } catch (e) { return false; }
+    }
 
     function getSavedDeviceAccounts() {
       return JSON.parse(localStorage.getItem('zerava_saved_device_accounts') || '[]');
@@ -2062,7 +2187,7 @@
       }
 
       if (currentUser) {
-        enterMainApp();
+        enterMainApp(true);
       }
 
       await syncFromSupabase(false);
@@ -2101,12 +2226,18 @@
       showTopPopup('Berhasil Masuk!', `Selamat datang, <b>${found.name}</b>!`);
     }
 
-    function enterMainApp() {
+    function enterMainApp(restore = false) {
       document.getElementById('loginView').classList.add('hidden');
       document.getElementById('setPasswordView').classList.add('hidden');
       document.getElementById('mainAppShell').classList.remove('hidden');
       renderAllLogos();
-      navigateTo('home');
+      if (restore && restoreNavState()) {
+        renderPage(navStack[navStack.length - 1]);
+      } else {
+        navStack = ['home'];
+        try { history.replaceState({ zerava: 1 }, '', '#home'); } catch (e) {}
+        renderPage('home');
+      }
       if (Notification.permission === 'granted') {
         subscribeDeviceToBackgroundPush();
       }
@@ -2117,6 +2248,10 @@
         'Konfirmasi Logout',
         'Apakah kamu yakin ingin keluar dari akun Zerava Filmboard sekarang?',
         () => {
+          const steps = navStack.length - 1;
+          navStack = ['home'];
+          try { sessionStorage.removeItem(NAV_KEY); } catch (e) {}
+          if (steps > 0) history.go(-steps);
           currentUser = null;
           localStorage.removeItem('zerava_v4_user');
           document.getElementById('mainAppShell').classList.add('hidden');
@@ -2131,6 +2266,7 @@
     // ---------------- 1. HOME PAGE (DENGAN TOP 3 BANK IDE) ----------------
     function renderHomePage() {
       document.getElementById('homeUserName').textContent = getMemberDisplayName(currentUser.id);
+      renderHomeAnnouncements();
 
       // Render Top 3 Ide Terpopuler dari Bank Ide Global
       const topIdeas = [...(db.ideaBank || [])]
@@ -2691,6 +2827,7 @@
 
     function switchProductionMainTab(tabName) {
       prodMainTab = tabName;
+      saveNavState();
       const btnProj = document.getElementById('prodTabBtn-projects');
       const btnIdeas = document.getElementById('prodTabBtn-ideas');
       const viewProj = document.getElementById('prodSubView-projects');
@@ -3096,6 +3233,7 @@
 
     function selectProjSubFeature(feat) {
       currentSubFeature = feat;
+      saveNavState();
       ['ide', 'naskah', 'shootlist', 'storyboard', 'dokumen'].forEach(f => {
         const btn = document.getElementById(`subFeat-${f}`);
         btn.className = (f === feat)
@@ -3250,6 +3388,12 @@
     }
 
     function openProjectAddFormPage(type) {
+      currentProjectAddType = type;
+      renderProjectAddForm(type);
+      navigateTo('project-add-item');
+    }
+
+    function renderProjectAddForm(type) {
       const box = document.getElementById('projectAddItemFormBox');
       box.innerHTML = `
         <form onsubmit="handleSaveProjectFile(event, '${type}')" class="space-y-4">
@@ -3275,7 +3419,6 @@
           </button>
         </form>
       `;
-      navigateTo('project-add-item');
     }
 
     async function handleSaveProjectFile(e, featKey) {
@@ -3595,7 +3738,7 @@
         <div class="p-4 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-white/5 transition">
           <div onclick="handleNotificationItemClick('${n.id}')" class="flex items-center gap-3.5 flex-1 min-w-0 cursor-pointer">
             <div class="w-10 h-10 rounded-2xl bg-zteal/15 dark:bg-zbeige/20 text-zteal dark:text-zbeige flex items-center justify-center shrink-0">
-              <i class="fa-solid ${n.type === 'class' ? 'fa-graduation-cap' : n.type === 'production' ? 'fa-clapperboard' : 'fa-comment-dots'}"></i>
+              <i class="fa-solid ${n.type === 'announcement' ? 'fa-bullhorn' : n.type === 'class' ? 'fa-graduation-cap' : n.type === 'production' ? 'fa-clapperboard' : 'fa-comment-dots'}"></i>
             </div>
             <div class="truncate">
               <div class="text-xs font-extrabold text-slate-900 dark:text-white truncate">${n.title}</div>
@@ -3843,6 +3986,74 @@
       document.getElementById('loginIdentifier').value = targetSetPassEmail;
     }
 
+    // ---------------- ANNOUNCEMENT ----------------
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function annDate(ts) {
+      return new Date(ts || Date.now()).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+    function getSortedAnnouncements() {
+      return [...(db.announcements || [])].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    }
+
+    function renderHomeAnnouncements() {
+      const list = getSortedAnnouncements().slice(0, 2);
+      const html = list.map(a => `
+        <div onclick="navigateTo('announcements')" class="card-interactive cursor-pointer bg-white dark:bg-zcard border border-amber-500/40 rounded-3xl p-4 shadow-sm space-y-1.5">
+          <div class="flex items-center justify-between gap-2 text-[10px]">
+            <span class="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-500 font-extrabold">Pengumuman</span>
+            <span class="text-slate-400">${annDate(a.createdAt)}</span>
+          </div>
+          <h4 class="font-extrabold text-sm text-slate-900 dark:text-white">${escapeHtml(a.title)}</h4>
+          <p class="text-xs text-slate-500 dark:text-gray-400 line-clamp-2 leading-relaxed">${escapeHtml(a.content)}</p>
+        </div>`).join('') || `<div onclick="navigateTo('announcements')" class="cursor-pointer p-4 rounded-3xl border border-dashed border-amber-500/40 text-xs text-slate-400 text-center">Belum ada pengumuman. Ketuk untuk membuat pengumuman pertama.</div>`;
+      setHtmlIfChanged('homeAnnouncementList', html);
+    }
+
+    function renderAnnouncementsPage() {
+      const isAdm = !!currentUser.isAdmin;
+      const html = getSortedAnnouncements().map(a => `
+        <div class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl p-5 shadow-sm space-y-2">
+          <div class="flex items-start justify-between gap-3">
+            <h3 class="font-extrabold text-sm text-slate-900 dark:text-white">${escapeHtml(a.title)}</h3>
+            ${(isAdm || a.authorId === currentUser.id) ? `<button onclick="confirmDeleteAnnouncement('${a.id}')" class="w-8 h-8 shrink-0 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white text-xs"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+          </div>
+          <p class="text-xs text-slate-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">${escapeHtml(a.content)}</p>
+          <div class="text-[11px] text-slate-400">Oleh <b class="text-slate-700 dark:text-gray-200">${escapeHtml(getMemberDisplayName(a.authorId))}</b> • ${annDate(a.createdAt)}</div>
+        </div>`).join('') || '<div class="p-8 text-center text-xs text-slate-400 bg-white dark:bg-zcard rounded-3xl border border-slate-200 dark:border-zborder">Belum ada pengumuman.</div>';
+      setHtmlIfChanged('annListContainer', html);
+    }
+
+    function toggleAnnouncementForm() {
+      document.getElementById('annForm').classList.toggle('hidden');
+    }
+
+    async function handleSaveAnnouncement(e) {
+      e.preventDefault();
+      const title = document.getElementById('annTitleIn').value.trim();
+      const content = document.getElementById('annContentIn').value.trim();
+      if (!title || !content) return;
+      db.announcements.unshift({ id: 'an_' + Date.now(), title, content, authorId: currentUser.id, createdAt: Date.now() });
+      await saveGlobalIdeaBankToSupabase();
+      await createAndBroadcastNotification('announcement', '📢 ' + title, content.length > 120 ? content.slice(0, 117) + '...' : content, 'all|announcements');
+      e.target.reset();
+      e.target.classList.add('hidden');
+      renderAnnouncementsPage();
+      showTopPopup('Pengumuman Terkirim', 'Semua member akan menerima notifikasi.', 'fa-bullhorn');
+    }
+
+    function confirmDeleteAnnouncement(id) {
+      const a = (db.announcements || []).find(x => x.id === id);
+      if (!a) return;
+      openConfirmDialog('Hapus Pengumuman?', `Pengumuman <b>"${escapeHtml(a.title)}"</b> akan dihapus untuk semua member.`, async () => {
+        db.announcements = db.announcements.filter(x => x.id !== id);
+        await saveGlobalIdeaBankToSupabase();
+        renderAnnouncementsPage();
+        showTopPopup('Pengumuman Dihapus', 'Pengumuman berhasil dihapus.', 'fa-trash-can');
+      });
+    }
+
     // UNIVERSAL INSTALL APP ENGINE (ANDROID & iOS)
     let deferredAndroidInstallPrompt = null;
 
@@ -3896,3 +4107,4 @@
   </script>
 </body>
 </html>
+
