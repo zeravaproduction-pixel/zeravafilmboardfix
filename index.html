@@ -711,6 +711,8 @@
           <button onclick="selectProjSubFeature('shootlist')" id="subFeat-shootlist" class="btn-interactive px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap">3. Shoot List</button>
           <button onclick="selectProjSubFeature('storyboard')" id="subFeat-storyboard" class="btn-interactive px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap">4. Story Board</button>
           <button onclick="selectProjSubFeature('dokumen')" id="subFeat-dokumen" class="btn-interactive px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap">5. Dokumen</button>
+          <button onclick="selectProjSubFeature('crew')" id="subFeat-crew" class="btn-interactive px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap">6. Crew</button>
+          <button onclick="selectProjSubFeature('budget')" id="subFeat-budget" class="btn-interactive px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap">7. Budget Planner</button>
         </div>
 
         <div id="projectSubFeatureBody" class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl p-5"></div>
@@ -722,6 +724,22 @@
           <i class="fa-solid fa-arrow-left"></i> Kembali ke Detail Project
         </button>
         <div id="projectAddItemFormBox" class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl p-6"></div>
+      </section>
+
+      <!-- 3E. FORM CREW (HALAMAN PENUH) -->
+      <section id="page-project-add-crew" class="app-page hidden space-y-5">
+        <button onclick="goBack()" class="inline-flex items-center gap-2 text-xs font-bold text-zteal dark:text-zbeige">
+          <i class="fa-solid fa-arrow-left"></i> Kembali ke Detail Project
+        </button>
+        <div id="crewFormBox" class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl p-6"></div>
+      </section>
+
+      <!-- 3F. FORM ITEM BUDGET (HALAMAN PENUH) -->
+      <section id="page-project-add-budget" class="app-page hidden space-y-5">
+        <button onclick="goBack()" class="inline-flex items-center gap-2 text-xs font-bold text-zteal dark:text-zbeige">
+          <i class="fa-solid fa-arrow-left"></i> Kembali ke Detail Project
+        </button>
+        <div id="budgetFormBox" class="bg-white dark:bg-zcard border border-slate-200 dark:border-zborder rounded-3xl p-6"></div>
       </section>
 
       <!-- 4. ZERAVA CLASS PAGE -->
@@ -1752,7 +1770,7 @@
           }));
         }
 
-        if (pRes.data && pRes.data.length > 0) {
+        if (!pRes.error && Array.isArray(pRes.data)) {
           // Pisahkan baris khusus Bank Ide Global dari daftar Project Film
           const bankRow = pRes.data.find(r => r.id === BANK_IDE_ROW_ID);
           const realProjectRows = pRes.data.filter(r => r.id !== BANK_IDE_ROW_ID);
@@ -1762,7 +1780,8 @@
             db.announcements = Array.isArray(bankRow.naskah) ? bankRow.naskah : [];
           }
 
-          if (realProjectRows.length > 0) {
+          {
+            // SELALU timpa db.projects dari server (meskipun kosong) agar data dummy tidak muncul lagi
             db.projects = realProjectRows.map(r => {
               const pIdeas = r.ideas || [];
               // Gabungkan ide lama yang ada di project ke dalam Bank Ide Global agar tidak ada ide yang hilang
@@ -1775,23 +1794,29 @@
                   });
                 }
               });
+              const rawDok = Array.isArray(r.dokumen) ? r.dokumen : [];
+              const metaCB = rawDok.find(d => d && d.__metaType === 'crew_budget') || {};
               return {
                 id: r.id, title: r.title, desc: r.description, startDate: r.start_date, endDate: r.end_date,
                 deadline: r.deadline, status: r.status, thumbnail: r.thumbnail,
                 shootListTemplateUrl: r.shootlist_template_url, storyboardTemplateUrl: r.storyboard_template_url,
                 selectedIdeaId: pIdeas[0]?.id || '',
-                ideas: pIdeas, naskah: r.naskah || [], shootlist: r.shootlist || [], storyboard: r.storyboard || [], dokumen: r.dokumen || []
+                ideas: pIdeas, naskah: r.naskah || [], shootlist: r.shootlist || [], storyboard: r.storyboard || [],
+                dokumen: rawDok.filter(d => !(d && d.__metaType)),
+                crew: Array.isArray(metaCB.crew) ? metaCB.crew : [],
+                budgetItems: Array.isArray(metaCB.budgetItems) ? metaCB.budgetItems : [],
+                budgetIncome: Array.isArray(metaCB.budgetIncome) ? metaCB.budgetIncome : []
               };
             });
           }
 
           // Jika baris Bank Ide belum ada di Supabase, inisialisasikan otomatis
-          if (!bankRow) {
+          if (!bankRow && pRes.data.length > 0) {
             saveGlobalIdeaBankToSupabase();
           }
         }
 
-        if (cRes.data && cRes.data.length > 0) {
+        if (!cRes.error && Array.isArray(cRes.data)) {
           db.classMaterials = cRes.data.map(r => ({
             id: r.id, title: r.title, desc: r.description, thumbnail: r.thumbnail,
             fileName: r.file_name, fileSize: r.file_size, url: r.url, uploaderId: r.uploader_id
@@ -1958,7 +1983,7 @@
         'home': 'home',
         'announcements': 'home',
         'chat': 'chat', 'chat-room': 'chat', 'create-group': 'chat', 'group-info': 'chat', 'member-profile': 'chat',
-        'production': 'production', 'create-project': 'production', 'create-idea': 'production', 'project-detail': 'production', 'project-add-item': 'production',
+        'production': 'production', 'create-project': 'production', 'create-idea': 'production', 'project-detail': 'production', 'project-add-item': 'production', 'project-add-crew': 'production', 'project-add-budget': 'production',
         'class': 'class', 'create-class': 'class', 'class-detail': 'class',
         'profile': 'profile', 'admin': 'profile'
       };
@@ -2000,6 +2025,8 @@
       else if (pageId === 'admin') renderAdminPage();
       else if (pageId === 'announcements') renderAnnouncementsPage();
       else if (pageId === 'project-add-item' && !document.getElementById('newProjFileName') && currentProjectAddType) renderProjectAddForm(currentProjectAddType);
+      else if (pageId === 'project-add-crew' && !document.getElementById('crewForm')) renderCrewForm();
+      else if (pageId === 'project-add-budget' && !document.getElementById('budgetForm')) renderBudgetForm();
 
       saveNavState();
       updateGlobalBadges();
@@ -2071,7 +2098,7 @@
       try {
         sessionStorage.setItem(NAV_KEY, JSON.stringify({
           uid: currentUser.id, navStack, currentRoom, currentProjectId, currentSubFeature,
-          prodMainTab, currentViewedMemberId, currentViewedMaterialId, currentProjectAddType
+          prodMainTab, currentViewedMemberId, currentViewedMaterialId, currentProjectAddType, currentCrewEditId, currentBudgetEditId
         }));
       } catch (e) {}
     }
@@ -2079,6 +2106,8 @@
     function isNavTargetValid(p) {
       if (p === 'project-detail') return db.projects.some(x => x.id === currentProjectId);
       if (p === 'project-add-item') return db.projects.some(x => x.id === currentProjectId) && !!currentProjectAddType;
+      if (p === 'project-add-crew') return db.projects.some(x => x.id === currentProjectId) && canManageCrew();
+      if (p === 'project-add-budget') return db.projects.some(x => x.id === currentProjectId);
       if (p === 'class-detail') return db.classMaterials.some(x => x.id === currentViewedMaterialId);
       if (p === 'member-profile') return db.users.some(x => x.id === currentViewedMemberId);
       if (p === 'chat-room' || p === 'group-info') {
@@ -2100,6 +2129,8 @@
         currentViewedMemberId = s.currentViewedMemberId;
         currentViewedMaterialId = s.currentViewedMaterialId;
         currentProjectAddType = s.currentProjectAddType || '';
+        currentCrewEditId = s.currentCrewEditId || '';
+        currentBudgetEditId = s.currentBudgetEditId || '';
         while (navStack.length > 1 && !isNavTargetValid(navStack[navStack.length - 1])) navStack.pop();
         return true;
       } catch (e) { return false; }
@@ -2553,9 +2584,9 @@
 
     function confirmDeleteMessage(msgId) {
       openConfirmDialog('Hapus Pesan Chat?', 'Pesan ini akan dihapus secara permanen dari ruang obrolan.', async () => {
+        if (!(await sbSafeDelete('zerava_messages', 'id', msgId, 'Pesan'))) return;
         db.messages = db.messages.filter(m => m.id !== msgId);
         saveDbLocal();
-        if (sb) await sb.from('zerava_messages').delete().eq('id', msgId);
         renderChatRoomPage(false);
         showTopPopup('Pesan Dihapus', 'Pesan berhasil dihapus dari obrolan.', 'fa-trash-can');
       });
@@ -2791,13 +2822,11 @@
 
     function confirmDeleteGroup(groupId, groupName) {
       openConfirmDialog('Hapus Grup?', `Apakah kamu yakin ingin menghapus grup <b>"${groupName}"</b> beserta seluruh obrolannya?`, async () => {
+        if (!(await sbSafeDelete('zerava_groups', 'id', groupId, 'Grup'))) return;
+        if (!(await sbSafeDelete('zerava_messages', 'room_id', groupId, 'Pesan grup'))) return;
         db.groups = db.groups.filter(g => g.id !== groupId);
         db.messages = db.messages.filter(m => m.roomId !== groupId);
         saveDbLocal();
-        if (sb) {
-          await sb.from('zerava_groups').delete().eq('id', groupId);
-          await sb.from('zerava_messages').delete().eq('room_id', groupId);
-        }
         navigateTo('chat');
         showTopPopup('Grup Dihapus', `Grup <b>${groupName}</b> telah dihapus.`, 'fa-trash-can');
       });
@@ -3085,9 +3114,9 @@
 
     function confirmDeleteProject(projId, projTitle) {
       openConfirmDialog('Hapus Project Film?', `Seluruh naskah, shoot list, storyboard, dan dokumen di dalam project <b>"${projTitle}"</b> akan ikut terhapus (Ide asli di Bank Ide tetap aman).`, async () => {
+        if (!(await sbSafeDelete('zerava_projects', 'id', projId, 'Project'))) return;
         db.projects = db.projects.filter(p => p.id !== projId);
         saveDbLocal();
-        if (sb) await sb.from('zerava_projects').delete().eq('id', projId);
         navigateTo('production');
         showTopPopup('Project Dihapus', `Project <b>${projTitle}</b> telah dihapus.`, 'fa-trash-can');
       });
@@ -3119,7 +3148,7 @@
         storyboardTemplateUrl: 'https://canva.link/8f5qoypxe9yuwlz',
         selectedIdeaId: chosenIdeaObj ? chosenIdeaObj.id : '',
         ideas: chosenIdeaObj ? [chosenIdeaObj] : [],
-        naskah: [], shootlist: [], storyboard: [], dokumen: []
+        naskah: [], shootlist: [], storyboard: [], dokumen: [], crew: [], budgetItems: [], budgetIncome: []
       };
 
       preselectedBankIdeaForNewProj = '';
@@ -3155,7 +3184,8 @@
       if (!sb || !p) return;
       await sb.from('zerava_projects').update({
         start_date: p.startDate, end_date: p.endDate, deadline: p.deadline, status: p.status,
-        ideas: p.ideas, naskah: p.naskah, shootlist: p.shootlist, storyboard: p.storyboard, dokumen: p.dokumen
+        ideas: p.ideas, naskah: p.naskah, shootlist: p.shootlist, storyboard: p.storyboard,
+        dokumen: [...(p.dokumen || []).filter(d => !(d && d.__metaType)), buildCrewBudgetMeta(p)]
       }).eq('id', p.id);
     }
 
@@ -3234,7 +3264,7 @@
     function selectProjSubFeature(feat) {
       currentSubFeature = feat;
       saveNavState();
-      ['ide', 'naskah', 'shootlist', 'storyboard', 'dokumen'].forEach(f => {
+      ['ide', 'naskah', 'shootlist', 'storyboard', 'dokumen', 'crew', 'budget'].forEach(f => {
         const btn = document.getElementById(`subFeat-${f}`);
         btn.className = (f === feat)
           ? 'zerava-btn-primary btn-interactive px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap'
@@ -3242,6 +3272,8 @@
       });
 
       const p = db.projects.find(x => x.id === currentProjectId);
+      if (p && feat === 'crew') { setHtmlIfChanged('projectSubFeatureBody', renderCrewTabHtml(p)); return; }
+      if (p && feat === 'budget') { setHtmlIfChanged('projectSubFeatureBody', renderBudgetTabHtml(p)); return; }
 
       // TAB 1: MENAMPILKAN IDE TERPILIH DARI BANK IDE (OPSI B)
       if (feat === 'ide') {
@@ -3341,7 +3373,7 @@
         dokumen: { title: '5. Dokumen Penting Syuting', btn: 'Tambah Dokumen', templateHtml: '' }
       }[feat];
 
-      const list = p[feat] || [];
+      const list = (p[feat] || []).filter(x => !(x && x.__metaType));
 
       const html = `
         <div class="space-y-4">
@@ -3460,6 +3492,513 @@
       showTopPopup('Berhasil Di-upload', `Dokumen <b>${name}</b> telah tersimpan.`);
     }
 
+    // ================= HELPER HAPUS SUPABASE (TANPA SILENT-FAIL) =================
+    async function sbSafeDelete(table, col, val, label) {
+      if (!sb) return true;
+      showLoading('Menghapus di server...');
+      let err = null;
+      try {
+        const r = await sb.from(table).delete().eq(col, val);
+        err = r.error;
+        if (!err) {
+          // Verifikasi: jika baris masih ada, berarti RLS policy DELETE menolak secara diam-diam
+          const c = await sb.from(table).select(col).eq(col, val).limit(1);
+          if (!c.error && c.data && c.data.length) err = { message: 'Server menolak penghapusan (RLS policy DELETE belum aktif).' };
+        }
+      } catch (e) { err = e; }
+      hideLoading();
+      if (err) {
+        showTopPopup('Gagal Menghapus di Server', `${label} tidak dihapus. ${escapeHtml(err.message || String(err))}`, 'fa-triangle-exclamation');
+        return false;
+      }
+      return true;
+    }
+
+    // ================= RBAC CREW & BUDGET =================
+    function hasRoleKw(kws) {
+      if (!currentUser) return false;
+      if (currentUser.isAdmin) return true;
+      const t = `${currentUser.role || ''} ${currentUser.divisi || ''}`.toLowerCase();
+      return kws.some(k => t.includes(k));
+    }
+    function canManageCrew() { return hasRoleKw(['ketua', 'admin', 'producer', 'sutradara']); }
+    function canManageFinance() { return hasRoleKw(['ketua', 'admin', 'bendahara']); }
+    function canEditBudgetPlan() { return hasRoleKw(['ketua', 'bendahara', 'producer', 'sutradara']); }
+
+    // ================= CREW & BUDGET: DATA =================
+    const CREW_DEPTS = ['Manajemen & Produksi', 'Penyutradaraan & Naskah', 'Kamera & Pencahayaan', 'Suara', 'Artistik & Wardrobe', 'Pascaproduksi', 'Aktor / Talent'];
+    const CREW_STATUSES = ['Confirmed', 'Standby', 'On-Set'];
+    const BUDGET_CATS = ['Pra-Produksi', 'Alat & Teknis', 'Artistik & Wardrobe', 'Konsumsi & Akomodasi', 'Pasca & Distribusi'];
+    const BUDGET_STATUSES = ['Usulan', 'Rencana', 'Disetujui', 'Lunas'];
+    let currentCrewEditId = '';
+    let currentBudgetEditId = '';
+    let budgetFilter = { cat: 'Semua', pay: 'Semua', q: '' };
+    let showIncomeForm = false;
+
+    const rp = n => 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
+    const sumBy = (arr, f) => (arr || []).reduce((s, x) => s + (Number(f(x)) || 0), 0);
+    const FIELD = 'w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder text-xs';
+    const BOX = 'p-3.5 rounded-2xl bg-slate-50 dark:bg-zdark border border-slate-200 dark:border-zborder';
+    const optList = (arr, sel) => arr.map(v => `<option value="${escapeHtml(v)}" ${v === sel ? 'selected' : ''}>${escapeHtml(v)}</option>`).join('');
+    const itemEst = it => (Number(it.qty) || 0) * (Number(it.price) || 0) * (Number(it.dur) || 1);
+
+    function ensureProjExtras(p) {
+      if (!p) return;
+      if (!Array.isArray(p.crew)) p.crew = [];
+      if (!Array.isArray(p.budgetItems)) p.budgetItems = [];
+      if (!Array.isArray(p.budgetIncome)) p.budgetIncome = [];
+    }
+    // Objek metadata khusus yang disimpan di dalam kolom JSONB `dokumen`
+    function buildCrewBudgetMeta(p) {
+      return { id: '__meta_crew_budget__', __metaType: 'crew_budget', crew: p.crew || [], budgetItems: p.budgetItems || [], budgetIncome: p.budgetIncome || [] };
+    }
+    async function persistProject(p) {
+      saveDbLocal();
+      await saveProjectToSupabase(p);
+    }
+    function curProj() { const p = db.projects.find(x => x.id === currentProjectId); ensureProjExtras(p); return p; }
+
+    // ================= TAB 6: CREW =================
+    const CREW_ST_CLR = { Confirmed: 'bg-emerald-500/15 text-emerald-500', Standby: 'bg-amber-500/15 text-amber-500', 'On-Set': 'bg-sky-500/15 text-sky-500' };
+
+    function renderCrewTabHtml(p) {
+      ensureProjExtras(p);
+      const canM = canManageCrew();
+      const deptFilled = new Set(p.crew.map(c => c.dept)).size;
+      const extCount = p.crew.filter(c => c.type === 'external' || c.dept === 'Aktor / Talent').length;
+      const card = (label, val) => `<div class="${BOX} text-center"><div class="text-lg font-extrabold text-zteal dark:text-zbeige">${val}</div><div class="text-[10px] text-slate-400 font-semibold leading-tight">${label}</div></div>`;
+      const groups = CREW_DEPTS.map(d => {
+        const rows = p.crew.filter(c => c.dept === d);
+        if (!rows.length) return '';
+        return `<div class="space-y-2"><div class="text-[11px] font-extrabold uppercase tracking-wide text-slate-400">${d} (${rows.length})</div>${rows.map(c => crewRowHtml(c, canM)).join('')}</div>`;
+      }).join('') || '<div class="text-xs text-slate-400 text-center py-6">Belum ada crew di project ini.</div>';
+      return `
+        <div class="space-y-4">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="font-extrabold text-sm text-slate-900 dark:text-white">6. Crew Project</h3>
+            ${canM ? `<button onclick="openCrewFormPage('')" class="zerava-btn-primary btn-interactive px-4 py-2 rounded-xl font-extrabold text-xs"><i class="fa-solid fa-plus mr-1"></i> Tambah Crew</button>` : ''}
+          </div>
+          <div class="grid grid-cols-3 gap-2">${card('Total Crew Bertugas', p.crew.length)}${card('Departemen Terisi', deptFilled + '/' + CREW_DEPTS.length)}${card('Talent / Eksternal', extCount)}</div>
+          ${canM ? '' : '<div class="text-[11px] text-slate-400">Hanya Admin, Ketua, Producer, atau Sutradara yang dapat mengelola crew.</div>'}
+          ${groups}
+        </div>`;
+    }
+
+    function crewRowHtml(c, canM) {
+      const u = c.type === 'member' ? db.users.find(x => x.id === c.userId) : null;
+      const name = u ? getMemberDisplayName(u.id) : (c.name || 'Tanpa Nama');
+      const avatar = u && u.avatar
+        ? `<img src="${u.avatar}" decoding="async" class="w-10 h-10 rounded-full object-cover shrink-0" />`
+        : `<div class="w-10 h-10 rounded-full bg-zteal/15 dark:bg-zpurple/30 text-zteal dark:text-zbeige font-extrabold text-sm flex items-center justify-center shrink-0">${escapeHtml(name.charAt(0).toUpperCase())}</div>`;
+      const open = u ? `onclick="openMemberProfilePage('${u.id}')" class="cursor-pointer flex items-center gap-3 min-w-0 flex-1"` : `class="flex items-center gap-3 min-w-0 flex-1"`;
+      return `
+        <div class="${BOX} space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <div ${open}>
+              ${avatar}
+              <div class="min-w-0">
+                <div class="text-xs font-extrabold text-slate-900 dark:text-white truncate">${escapeHtml(name)} ${u ? '' : '<span class="ml-1 px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-zborder text-[9px] text-slate-500 dark:text-gray-300">Eksternal</span>'}</div>
+                <div class="text-[11px] text-slate-500 dark:text-gray-400 truncate">${escapeHtml(c.role || '-')}${!u && c.contact ? ' • ' + escapeHtml(c.contact) : ''}</div>
+              </div>
+            </div>
+            <button ${canM ? `onclick="cycleCrewStatus('${c.id}')" title="Ketuk untuk ubah status"` : 'disabled'} class="btn-interactive px-2.5 py-1 rounded-full text-[10px] font-extrabold shrink-0 ${CREW_ST_CLR[c.status] || CREW_ST_CLR.Standby}">${escapeHtml(c.status || 'Standby')}</button>
+          </div>
+          ${c.note ? `<p class="text-[11px] text-slate-500 dark:text-gray-400 leading-relaxed whitespace-pre-line">${escapeHtml(c.note)}</p>` : ''}
+          <div class="flex items-center gap-2 justify-end">
+            ${u && u.id !== currentUser.id ? `<button onclick="openChatRoom('dm','${u.id}')" class="btn-interactive px-3 py-1.5 rounded-xl bg-white dark:bg-zcard border border-slate-200 dark:border-zborder text-[11px] font-bold text-zteal dark:text-zbeige"><i class="fa-solid fa-comment-dots mr-1"></i>Chat</button>` : ''}
+            ${canM ? `<button onclick="openCrewFormPage('${c.id}')" class="btn-interactive px-3 py-1.5 rounded-xl bg-white dark:bg-zcard border border-slate-200 dark:border-zborder text-[11px] font-bold"><i class="fa-solid fa-pen mr-1"></i>Edit</button>
+            <button onclick="confirmDeleteCrew('${c.id}')" class="w-8 h-8 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white text-xs"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+          </div>
+        </div>`;
+    }
+
+    async function cycleCrewStatus(id) {
+      if (!canManageCrew()) return;
+      const p = curProj(); const c = p && p.crew.find(x => x.id === id);
+      if (!c) return;
+      c.status = CREW_STATUSES[(CREW_STATUSES.indexOf(c.status) + 1) % CREW_STATUSES.length];
+      selectProjSubFeature('crew');
+      await persistProject(p);
+    }
+
+    function confirmDeleteCrew(id) {
+      if (!canManageCrew()) return;
+      const p = curProj(); const c = p && p.crew.find(x => x.id === id);
+      if (!c) return;
+      const nm = c.type === 'member' ? getMemberDisplayName(c.userId) : c.name;
+      openConfirmDialog('Hapus Crew?', `<b>"${escapeHtml(nm)}"</b> akan dihapus dari crew project ini.`, async () => {
+        p.crew = p.crew.filter(x => x.id !== id);
+        selectProjSubFeature('crew');
+        await persistProject(p);
+        showTopPopup('Crew Dihapus', `<b>${escapeHtml(nm)}</b> dihapus dari crew.`, 'fa-trash-can');
+      });
+    }
+
+    function openCrewFormPage(crewId = '') {
+      if (!canManageCrew()) { showTopPopup('Akses Dibatasi', 'Hanya Admin, Ketua, Producer, atau Sutradara yang dapat mengelola crew.', 'fa-lock'); return; }
+      currentCrewEditId = crewId;
+      renderCrewForm();
+      navigateTo('project-add-crew');
+    }
+
+    function renderCrewForm() {
+      const p = curProj(); if (!p) return;
+      const c = p.crew.find(x => x.id === currentCrewEditId) || {};
+      const isExt = c.type === 'external';
+      const users = [...db.users].sort((a, b) => a.name.localeCompare(b.name));
+      document.getElementById('crewFormBox').innerHTML = `
+        <form id="crewForm" onsubmit="handleSaveCrew(event)" class="space-y-4">
+          <h2 class="text-lg font-extrabold text-slate-900 dark:text-white">${c.id ? 'Edit Crew' : 'Tambah Crew'}</h2>
+          <div>
+            <label class="block text-xs font-bold mb-1">Sumber Anggota *</label>
+            <select id="crewSrc" onchange="toggleCrewSrc()" class="${FIELD}">
+              <option value="member" ${isExt ? '' : 'selected'}>Member Zerava</option>
+              <option value="external" ${isExt ? 'selected' : ''}>Crew / Aktor Eksternal</option>
+            </select>
+          </div>
+          <div id="crewMemberWrap" class="${isExt ? 'hidden' : ''}">
+            <label class="block text-xs font-bold mb-1">Pilih Member *</label>
+            <select id="crewUserId" onchange="prefillCrewRole()" class="${FIELD}">
+              <option value="">-- Pilih member --</option>
+              ${users.map(u => `<option value="${u.id}" data-divisi="${escapeHtml(u.divisi || '')}" ${c.userId === u.id ? 'selected' : ''}>${escapeHtml(u.name)} — ${escapeHtml(u.divisi || '-')}</option>`).join('')}
+            </select>
+          </div>
+          <div id="crewExtWrap" class="${isExt ? '' : 'hidden'} space-y-3">
+            <div>
+              <label class="block text-xs font-bold mb-1">Nama Crew / Aktor Eksternal *</label>
+              <input id="crewExtName" type="text" value="${escapeHtml(c.name || '')}" placeholder="Nama bebas" class="${FIELD}" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">Kontak / Catatan</label>
+              <input id="crewContact" type="text" value="${escapeHtml(c.contact || '')}" placeholder="No. WA / asal sekolah / keterangan" class="${FIELD}" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold mb-1">Departemen Proyek *</label>
+            <select id="crewDept" class="${FIELD}">${optList(CREW_DEPTS, c.dept)}</select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold mb-1">Jabatan Spesifik di Proyek *</label>
+            <input id="crewRole" type="text" required value="${escapeHtml(c.role || '')}" placeholder="Contoh: DOP, Sutradara, Boom Operator" class="${FIELD}" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold mb-1">Status Kesiapan</label>
+            <select id="crewStatus" class="${FIELD}">${optList(CREW_STATUSES, c.status || 'Confirmed')}</select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold mb-1">Catatan Tugas</label>
+            <textarea id="crewNote" rows="3" placeholder="Tanggung jawab singkat crew ini" class="${FIELD}">${escapeHtml(c.note || '')}</textarea>
+          </div>
+          <button type="submit" class="zerava-btn-primary btn-interactive w-full py-3 rounded-2xl font-extrabold text-xs">${c.id ? 'Simpan Perubahan' : 'Tambahkan ke Crew'}</button>
+        </form>`;
+    }
+
+    function toggleCrewSrc() {
+      const ext = document.getElementById('crewSrc').value === 'external';
+      document.getElementById('crewMemberWrap').classList.toggle('hidden', ext);
+      document.getElementById('crewExtWrap').classList.toggle('hidden', !ext);
+    }
+    function prefillCrewRole() {
+      const sel = document.getElementById('crewUserId');
+      const roleIn = document.getElementById('crewRole');
+      const dv = sel.options[sel.selectedIndex]?.dataset.divisi;
+      if (dv && !roleIn.value.trim()) roleIn.value = dv;
+    }
+
+    async function handleSaveCrew(e) {
+      e.preventDefault();
+      if (!canManageCrew()) return;
+      const p = curProj(); if (!p) return;
+      const type = document.getElementById('crewSrc').value;
+      const userId = type === 'member' ? document.getElementById('crewUserId').value : '';
+      const name = type === 'external' ? document.getElementById('crewExtName').value.trim() : '';
+      if ((type === 'member' && !userId) || (type === 'external' && !name)) {
+        showTopPopup('Data Belum Lengkap', type === 'member' ? 'Pilih member Zerava terlebih dahulu.' : 'Isi nama crew/aktor eksternal.', 'fa-circle-exclamation');
+        return;
+      }
+      const old = p.crew.find(x => x.id === currentCrewEditId);
+      const data = {
+        id: old ? old.id : 'cr_' + Date.now(), type, userId, name,
+        contact: type === 'external' ? document.getElementById('crewContact').value.trim() : '',
+        dept: document.getElementById('crewDept').value,
+        role: document.getElementById('crewRole').value.trim(),
+        status: document.getElementById('crewStatus').value,
+        note: document.getElementById('crewNote').value.trim()
+      };
+      const isNewMember = type === 'member' && (!old || old.userId !== userId);
+      if (old) Object.assign(old, data); else p.crew.push(data);
+      await persistProject(p);
+      if (isNewMember && userId !== currentUser.id) {
+        await createAndBroadcastNotification(
+          'production', `Kamu masuk Crew: ${p.title}`,
+          `${currentUser.name} menambahkan kamu sebagai ${data.role} (${data.dept})`,
+          `user:${userId}|project:${p.id}:crew`, [userId]
+        );
+      }
+      goBack();
+      showTopPopup(old ? 'Crew Diperbarui' : 'Crew Ditambahkan', `<b>${escapeHtml(type === 'member' ? getMemberDisplayName(userId) : name)}</b> tersimpan.`);
+    }
+
+    // ================= TAB 7: BUDGET PLANNER =================
+    function budgetStats(p) {
+      const income = sumBy(p.budgetIncome, x => x.amount);
+      const est = sumBy(p.budgetItems, itemEst);
+      const actual = sumBy(p.budgetItems, x => x.actual);
+      const base = income > 0 ? income : est;
+      const pct = base > 0 ? (actual / base) * 100 : 0;
+      return { income, est, actual, sisa: income - actual, pct };
+    }
+
+    function renderBudgetTabHtml(p) {
+      ensureProjExtras(p);
+      const canFin = canManageFinance();
+      const s = budgetStats(p);
+      const barClr = s.pct > 100 ? 'bg-red-500' : (s.pct >= 80 ? 'bg-amber-500' : 'bg-emerald-500');
+      const txtClr = s.pct > 100 ? 'text-red-500' : (s.pct >= 80 ? 'text-amber-500' : 'text-emerald-500');
+      const card = (label, val, extra = '') => `<div class="${BOX}"><div class="text-[10px] text-slate-400 font-semibold">${label}</div><div class="text-sm font-extrabold text-slate-900 dark:text-white ${extra}">${val}</div></div>`;
+
+      const incomeRows = [...p.budgetIncome].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map(i => `
+        <div class="${BOX} flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <div class="text-xs font-bold text-slate-900 dark:text-white truncate">${escapeHtml(i.source)} <span class="text-emerald-500">+${rp(i.amount)}</span></div>
+            <div class="text-[11px] text-slate-400 truncate">${formatIndoDate(i.date)}${i.note ? ' • ' + escapeHtml(i.note) : ''}</div>
+          </div>
+          ${canFin ? `<button onclick="confirmDeleteIncome('${i.id}')" class="w-8 h-8 shrink-0 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white text-xs"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+        </div>`).join('') || '<div class="text-xs text-slate-400 text-center py-3">Belum ada pemasukan kas.</div>';
+
+      const q = budgetFilter.q.toLowerCase();
+      const items = p.budgetItems.filter(it =>
+        (budgetFilter.cat === 'Semua' || it.cat === budgetFilter.cat) &&
+        (budgetFilter.pay === 'Semua' || (budgetFilter.pay === 'Lunas' ? it.status === 'Lunas' : it.status !== 'Lunas')) &&
+        (!q || (it.name || '').toLowerCase().includes(q)));
+      const stClr = { Usulan: 'bg-slate-400/20 text-slate-500', Rencana: 'bg-sky-500/15 text-sky-500', Disetujui: 'bg-amber-500/15 text-amber-500', Lunas: 'bg-emerald-500/15 text-emerald-500' };
+      const canPlan = canEditBudgetPlan();
+
+      const itemRows = items.map(it => `
+        <div class="${BOX} space-y-1.5">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <div class="text-xs font-extrabold text-slate-900 dark:text-white truncate">${escapeHtml(it.name)}</div>
+              <div class="text-[11px] text-slate-400">${escapeHtml(it.cat)} • ${it.qty} × ${rp(it.price)} × ${it.dur || 1}</div>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold shrink-0 ${stClr[it.status] || stClr.Rencana}">${escapeHtml(it.status)}</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-[11px]">
+            <div><span class="text-slate-400">Estimasi</span><div class="font-extrabold text-slate-800 dark:text-white">${rp(itemEst(it))}</div></div>
+            <div><span class="text-slate-400">Aktual</span><div class="font-extrabold ${(Number(it.actual) || 0) > itemEst(it) ? 'text-red-500' : 'text-slate-800 dark:text-white'}">${it.actual ? rp(it.actual) : '-'}</div></div>
+          </div>
+          <div class="flex items-center gap-2 justify-end flex-wrap">
+            ${it.receiptUrl ? `<a href="${it.receiptUrl}" target="_blank" class="btn-interactive px-3 py-1.5 rounded-xl bg-white dark:bg-zcard border border-slate-200 dark:border-zborder text-[11px] font-bold text-zteal dark:text-zbeige"><i class="fa-solid fa-receipt mr-1"></i>Nota</a>` : ''}
+            ${canFin && it.status !== 'Lunas' ? `<button onclick="markBudgetPaid('${it.id}')" class="btn-interactive px-3 py-1.5 rounded-xl bg-emerald-500/15 text-emerald-500 text-[11px] font-extrabold"><i class="fa-solid fa-check mr-1"></i>Tandai Lunas</button>` : ''}
+            ${canPlan ? `<button onclick="openBudgetFormPage('${it.id}')" class="btn-interactive px-3 py-1.5 rounded-xl bg-white dark:bg-zcard border border-slate-200 dark:border-zborder text-[11px] font-bold"><i class="fa-solid fa-pen mr-1"></i>Edit</button>` : ''}
+            ${canFin ? `<button onclick="confirmDeleteBudgetItem('${it.id}')" class="w-8 h-8 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white text-xs"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+          </div>
+        </div>`).join('') || '<div class="text-xs text-slate-400 text-center py-6">Tidak ada item anggaran yang cocok.</div>';
+
+      return `
+        <div class="space-y-5">
+          <h3 class="font-extrabold text-sm text-slate-900 dark:text-white">7. Budget Planner</h3>
+          <div class="grid grid-cols-2 gap-2">
+            ${card('Total Dana / Pemasukan Kas', rp(s.income))}
+            ${card('Total Estimasi (RAB)', rp(s.est))}
+            ${card('Pengeluaran Aktual', rp(s.actual))}
+            ${card(s.sisa < 0 ? 'Kas Kurang (Overbudget)' : 'Sisa Kas', rp(s.sisa), s.sisa < 0 ? 'text-red-500' : 'text-emerald-500')}
+          </div>
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between text-[11px] font-bold"><span class="text-slate-500 dark:text-gray-400">Realisasi terhadap ${s.income > 0 ? 'dana kas' : 'estimasi'}</span><span class="${txtClr}">${s.pct.toFixed(0)}%${s.pct > 100 ? ' • OVERBUDGET' : ''}</span></div>
+            <div class="h-3 rounded-full bg-slate-200 dark:bg-zborder overflow-hidden"><div class="h-full ${barClr} rounded-full" style="width:${Math.min(s.pct, 100)}%"></div></div>
+          </div>
+
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between">
+              <h4 class="font-extrabold text-xs text-slate-900 dark:text-white">Sumber Dana / Pemasukan Kas</h4>
+              ${canFin ? `<button onclick="toggleIncomeForm()" class="text-xs font-extrabold text-zteal dark:text-zbeige hover:underline"><i class="fa-solid fa-plus mr-1"></i>Tambah Pemasukan</button>` : ''}
+            </div>
+            ${canFin && showIncomeForm ? `
+              <form onsubmit="handleSaveIncome(event)" class="${BOX} space-y-2">
+                <input id="incSource" list="incSourceList" required placeholder="Sumber dana (Kas Zerava, Iuran Kru, Sponsor...)" class="${FIELD}" />
+                <datalist id="incSourceList"><option value="Kas Zerava"><option value="Iuran Kru"><option value="Dana Sekolah/Lomba"><option value="Sponsor"></datalist>
+                <div class="grid grid-cols-2 gap-2">
+                  <input id="incDate" type="date" required value="${new Date().toISOString().slice(0, 10)}" class="${FIELD}" />
+                  <input id="incAmount" type="number" min="1" required placeholder="Nominal (Rp)" class="${FIELD}" />
+                </div>
+                <input id="incNote" placeholder="Keterangan (opsional)" class="${FIELD}" />
+                <button type="submit" class="zerava-btn-primary btn-interactive w-full py-2.5 rounded-xl font-extrabold text-xs">Simpan Pemasukan</button>
+              </form>` : ''}
+            ${incomeRows}
+          </div>
+
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <h4 class="font-extrabold text-xs text-slate-900 dark:text-white">Rincian Item Anggaran (RAB & Realisasi)</h4>
+              <button onclick="openBudgetFormPage('')" class="zerava-btn-primary btn-interactive px-3.5 py-2 rounded-xl font-extrabold text-xs"><i class="fa-solid fa-plus mr-1"></i>${canPlan ? 'Tambah Item' : 'Usulkan Item'}</button>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <select onchange="setBudgetFilter('cat', this.value)" class="${FIELD}"><option value="Semua">Semua Kategori</option>${optList(BUDGET_CATS, budgetFilter.cat)}</select>
+              <select onchange="setBudgetFilter('pay', this.value)" class="${FIELD}">${optList(['Semua', 'Belum Lunas', 'Lunas'], budgetFilter.pay)}</select>
+            </div>
+            <input type="search" value="${escapeHtml(budgetFilter.q)}" onchange="setBudgetFilter('q', this.value)" placeholder="Cari nama kebutuhan..." class="${FIELD}" />
+            ${itemRows}
+          </div>
+        </div>`;
+    }
+
+    function setBudgetFilter(k, v) { budgetFilter[k] = v; selectProjSubFeature('budget'); }
+    function toggleIncomeForm() { showIncomeForm = !showIncomeForm; selectProjSubFeature('budget'); }
+
+    async function handleSaveIncome(e) {
+      e.preventDefault();
+      if (!canManageFinance()) return;
+      const p = curProj(); if (!p) return;
+      p.budgetIncome.push({
+        id: 'bi_' + Date.now(), source: document.getElementById('incSource').value.trim(),
+        date: document.getElementById('incDate').value, amount: Number(document.getElementById('incAmount').value) || 0,
+        note: document.getElementById('incNote').value.trim()
+      });
+      showIncomeForm = false;
+      selectProjSubFeature('budget');
+      await persistProject(p);
+      showTopPopup('Pemasukan Ditambahkan', 'Pemasukan kas berhasil disimpan.');
+    }
+
+    function confirmDeleteIncome(id) {
+      if (!canManageFinance()) return;
+      const p = curProj(); const i = p && p.budgetIncome.find(x => x.id === id);
+      if (!i) return;
+      openConfirmDialog('Hapus Pemasukan Kas?', `Pemasukan <b>"${escapeHtml(i.source)}"</b> (${rp(i.amount)}) akan dihapus.`, async () => {
+        p.budgetIncome = p.budgetIncome.filter(x => x.id !== id);
+        selectProjSubFeature('budget');
+        await persistProject(p);
+        showTopPopup('Pemasukan Dihapus', 'Pemasukan kas telah dihapus.', 'fa-trash-can');
+      });
+    }
+
+    async function markBudgetPaid(id) {
+      if (!canManageFinance()) return;
+      const p = curProj(); const it = p && p.budgetItems.find(x => x.id === id);
+      if (!it) return;
+      it.status = 'Lunas';
+      if (!Number(it.actual)) it.actual = itemEst(it);
+      selectProjSubFeature('budget');
+      await persistProject(p);
+      showTopPopup('Ditandai Lunas', `<b>${escapeHtml(it.name)}</b> ditandai lunas.`);
+    }
+
+    function confirmDeleteBudgetItem(id) {
+      if (!canManageFinance()) return;
+      const p = curProj(); const it = p && p.budgetItems.find(x => x.id === id);
+      if (!it) return;
+      openConfirmDialog('Hapus Item Anggaran?', `Item <b>"${escapeHtml(it.name)}"</b> akan dihapus dari budget.`, async () => {
+        p.budgetItems = p.budgetItems.filter(x => x.id !== id);
+        selectProjSubFeature('budget');
+        await persistProject(p);
+        showTopPopup('Item Dihapus', 'Item anggaran telah dihapus.', 'fa-trash-can');
+      });
+    }
+
+    function openBudgetFormPage(itemId = '') {
+      const p = curProj(); const it = p && p.budgetItems.find(x => x.id === itemId);
+      if (itemId && !canEditBudgetPlan()) { showTopPopup('Akses Dibatasi', 'Anda tidak dapat mengedit item anggaran.', 'fa-lock'); return; }
+      currentBudgetEditId = itemId;
+      renderBudgetForm();
+      navigateTo('project-add-budget');
+    }
+
+    function renderBudgetForm() {
+      const p = curProj(); if (!p) return;
+      const it = p.budgetItems.find(x => x.id === currentBudgetEditId) || {};
+      const canFin = canManageFinance(), canPlan = canEditBudgetPlan();
+      const proposeOnly = !canPlan;
+      const stOpts = canFin ? BUDGET_STATUSES.filter(s => s !== 'Usulan' || it.status === 'Usulan') : ['Rencana', 'Disetujui'];
+      if (it.status === 'Lunas' && !stOpts.includes('Lunas')) stOpts.push('Lunas');
+      document.getElementById('budgetFormBox').innerHTML = `
+        <form id="budgetForm" onsubmit="handleSaveBudgetItem(event)" class="space-y-4">
+          <h2 class="text-lg font-extrabold text-slate-900 dark:text-white">${it.id ? 'Edit Item Anggaran' : (proposeOnly ? 'Usulkan Item Anggaran' : 'Tambah Item Anggaran')}</h2>
+          <div>
+            <label class="block text-xs font-bold mb-1">Nama Kebutuhan *</label>
+            <input id="bdgName" type="text" required value="${escapeHtml(it.name || '')}" placeholder="Contoh: Sewa lighting 2 hari" class="${FIELD}" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold mb-1">Kategori Biaya *</label>
+            <select id="bdgCat" class="${FIELD}">${optList(BUDGET_CATS, it.cat)}</select>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <div><label class="block text-xs font-bold mb-1">Qty *</label><input id="bdgQty" type="number" min="0" step="any" required oninput="calcBudgetSubtotal()" value="${it.qty ?? 1}" class="${FIELD}" /></div>
+            <div><label class="block text-xs font-bold mb-1">Harga Satuan *</label><input id="bdgPrice" type="number" min="0" required oninput="calcBudgetSubtotal()" value="${it.price ?? ''}" placeholder="Rp" class="${FIELD}" /></div>
+            <div><label class="block text-xs font-bold mb-1">Durasi/Frek.</label><input id="bdgDur" type="number" min="1" step="any" oninput="calcBudgetSubtotal()" value="${it.dur ?? 1}" class="${FIELD}" /></div>
+          </div>
+          <div class="${BOX} flex items-center justify-between text-xs"><span class="font-bold text-slate-500 dark:text-gray-400">Subtotal Estimasi</span><span id="bdgSubtotal" class="font-extrabold text-zteal dark:text-zbeige">${rp(itemEst(it))}</span></div>
+          ${proposeOnly ? '' : `
+          <div>
+            <label class="block text-xs font-bold mb-1">Biaya Aktual (Rp)</label>
+            <input id="bdgActual" type="number" min="0" value="${it.actual || ''}" placeholder="Kosongkan jika belum ada realisasi" class="${FIELD}" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold mb-1">Status</label>
+            <select id="bdgStatus" class="${FIELD}">${optList(stOpts, it.status || 'Rencana')}</select>
+            ${canFin ? '' : '<p class="text-[10px] text-slate-400 mt-1">Status "Lunas" hanya dapat diverifikasi Admin, Ketua, atau Bendahara.</p>'}
+          </div>
+          <div>
+            <label class="block text-xs font-bold mb-1">Unggah Bukti Nota / Struk (Maks 15 MB)</label>
+            <input id="bdgReceiptFile" type="file" accept="image/*,application/pdf" onchange="checkFileMax15MB(this, 'bdgReceiptUrl')" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-zteal file:text-white file:font-bold" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold mb-1">Atau Link Google Drive</label>
+            <input id="bdgReceiptUrl" type="url" value="${escapeHtml(it.receiptUrl && !it.receiptUrl.startsWith('data:') ? it.receiptUrl : '')}" placeholder="https://drive.google.com/..." class="${FIELD}" />
+            ${it.receiptUrl ? '<p class="text-[10px] text-slate-400 mt-1">Nota sudah terlampir. Pilih file/link baru untuk menggantinya.</p>' : ''}
+          </div>`}
+          <button type="submit" class="zerava-btn-primary btn-interactive w-full py-3 rounded-2xl font-extrabold text-xs">${it.id ? 'Simpan Perubahan' : (proposeOnly ? 'Kirim Usulan' : 'Simpan Item')}</button>
+        </form>`;
+    }
+
+    function calcBudgetSubtotal() {
+      const v = id => Number(document.getElementById(id)?.value) || 0;
+      const el = document.getElementById('bdgSubtotal');
+      if (el) el.textContent = rp(v('bdgQty') * v('bdgPrice') * (v('bdgDur') || 1));
+    }
+
+    async function handleSaveBudgetItem(e) {
+      e.preventDefault();
+      const p = curProj(); if (!p) return;
+      const old = p.budgetItems.find(x => x.id === currentBudgetEditId);
+      const canPlan = canEditBudgetPlan(), canFin = canManageFinance();
+      if (old && !canPlan) return;
+
+      const data = {
+        id: old ? old.id : 'bd_' + Date.now(),
+        name: document.getElementById('bdgName').value.trim(),
+        cat: document.getElementById('bdgCat').value,
+        qty: Number(document.getElementById('bdgQty').value) || 0,
+        price: Number(document.getElementById('bdgPrice').value) || 0,
+        dur: Number(document.getElementById('bdgDur').value) || 1,
+        actual: old ? (old.actual || 0) : 0,
+        status: old ? old.status : (canPlan ? 'Rencana' : 'Usulan'),
+        receiptUrl: old ? (old.receiptUrl || '') : '',
+        createdBy: old ? old.createdBy : currentUser.id
+      };
+
+      if (canPlan) {
+        data.actual = Number(document.getElementById('bdgActual').value) || 0;
+        const newStatus = document.getElementById('bdgStatus').value;
+        data.status = (old && old.status === 'Lunas' && !canFin) ? 'Lunas' : newStatus;
+
+        const fileIn = document.getElementById('bdgReceiptFile');
+        const linkVal = document.getElementById('bdgReceiptUrl').value.trim();
+        if (fileIn.files[0] && !checkFileMax15MB(fileIn, 'bdgReceiptUrl')) return;
+        if (fileIn.files[0]) {
+          const url = await uploadFileToCloud(fileIn.files[0]);
+          if (url) data.receiptUrl = url;
+        } else if (linkVal) {
+          data.receiptUrl = linkVal;
+        }
+      }
+
+      if (old) Object.assign(old, data); else p.budgetItems.push(data);
+      await persistProject(p);
+      goBack();
+      showTopPopup(old ? 'Item Diperbarui' : (canPlan ? 'Item Ditambahkan' : 'Usulan Terkirim'), `<b>${escapeHtml(data.name)}</b> tersimpan di Budget Planner.`);
+    }
+
     // 4. ZERAVA CLASS
     function renderClassList(force = false) {
       const q = (document.getElementById('classSearchIn')?.value || '').toLowerCase();
@@ -3489,9 +4028,9 @@
 
     function confirmDeleteClassMaterial(matId, matTitle) {
       openConfirmDialog('Hapus Materi Zerava Class?', `Apakah kamu yakin ingin menghapus materi <b>"${matTitle}"</b> beserta filenya?`, async () => {
+        if (!(await sbSafeDelete('zerava_class', 'id', matId, 'Materi Class'))) return;
         db.classMaterials = db.classMaterials.filter(m => m.id !== matId);
         saveDbLocal();
-        if (sb) await sb.from('zerava_class').delete().eq('id', matId);
         navigateTo('class');
         showTopPopup('Materi Dihapus', `Materi <b>${matTitle}</b> telah dihapus.`, 'fa-trash-can');
       });
@@ -3805,9 +4344,15 @@
       });
       db.projects.forEach(p => {
         ['naskah', 'shootlist', 'storyboard', 'dokumen'].forEach(k => {
-          (p[k] || []).filter(f => f.uploaderId === currentUser.id).forEach(f => {
+          (p[k] || []).filter(f => !f.__metaType && f.uploaderId === currentUser.id).forEach(f => {
             myFiles.push({ title: f.name, type: `${k.toUpperCase()} (${p.title})` });
           });
+        });
+      });
+
+      db.projects.forEach(p => {
+        (p.crew || []).filter(c => c.type === 'member' && c.userId === currentUser.id).forEach(c => {
+          myFiles.push({ title: `${c.role || c.dept} • ${c.dept} (${c.status})`, type: `Crew (${p.title})` });
         });
       });
 
@@ -3877,9 +4422,9 @@
 
     function confirmDeleteInvite(email) {
       openConfirmDialog('Hapus Riwayat Undangan?', `Hapus riwayat undangan untuk <b>${email}</b>?`, async () => {
+        if (!(await sbSafeDelete('zerava_invites', 'email', email, 'Riwayat undangan'))) return;
         db.invites = db.invites.filter(i => i.email !== email);
         saveDbLocal();
-        if (sb) await sb.from('zerava_invites').delete().eq('email', email);
         renderAdminPage();
         showTopPopup('Riwayat Dihapus', 'Data riwayat undangan telah dihapus.');
       });
